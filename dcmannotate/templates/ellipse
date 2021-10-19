@@ -1,0 +1,67 @@
+<container flag="SEPARATE">
+    <relationship>CONTAINS</relationship>
+    <concept>
+        <value>125007</value>
+        <scheme>
+            <designator>DCM</designator>
+        </scheme>
+        <meaning>Measurement Group</meaning>
+    </concept>
+    <text>
+        <relationship>HAS OBS CONTEXT</relationship>
+        <concept>
+            <value>112039</value>
+            <scheme>
+                <designator>DCM</designator>
+            </scheme>
+            <meaning>Tracking Identifier</meaning>
+        </concept>
+        <value>cornerstoneTools@^4.0.0:EllipticalRoi</value>
+    </text>
+    <uidref>
+        <relationship>HAS OBS CONTEXT</relationship>
+        <concept>
+            <value>112040</value>
+            <scheme>
+                <designator>DCM</designator>
+            </scheme>
+            <meaning>Tracking Unique Identifier</meaning>
+        </concept>
+        <value>{{ generate_uid('2.25.') }}</value>
+    </uidref>
+    <num>
+        <relationship>CONTAINS</relationship>
+        <concept>
+            <value>G-D7FE</value>
+            <scheme>
+                <designator>SRT</designator>
+            </scheme>
+            <meaning>AREA</meaning>
+        </concept>
+        <scoord type="ELLIPSE">
+            <relationship>INFERRED FROM</relationship>
+            <image>
+                <relationship>SELECTED FROM</relationship>
+                <value>
+                    <sopclass uid="1.2.840.10008.5.1.4.1.1.4">MRImageStorage</sopclass>
+                    <instance uid="{{ reference.SOPInstanceUID }}"/>
+                </value>
+            </image>
+            <data>
+            {{ ellipse.top.x }}/{{ ellipse.top.y }},
+            {{ ellipse.bottom.x }}/{{ ellipse.bottom.y }},
+            {{ ellipse.left.x }}/{{ ellipse.left.y }},
+            {{ ellipse.right.x }}/{{ ellipse.right.y }}
+            </data>
+        </scoord>
+        <value>{{ ellipse.value}}</value>
+        <unit>
+            <value>{{ ellipse.unit.value }}</value>
+            <scheme>
+                <designator>UCUM</designator>
+                <version>1.4</version>
+            </scheme>
+            <meaning>{{ ellipse.unit.meaning }}</meaning>
+        </unit>
+    </num>
+</container>
