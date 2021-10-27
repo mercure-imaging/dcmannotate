@@ -38,6 +38,7 @@ class VisageWriter():
         )
         env.globals['generate_uid'] = generate_uid
         self.template = env.get_template("base.xml")
+        self.key_views = env.get_template("key_views.xml")
 
     def decode(self, t):
         return zlib.decompress(t[4:]).decode('utf-8')
@@ -56,11 +57,17 @@ class VisageWriter():
             compressed.append(0)
         return bytes(compressed)
 
-    def render_xml(self, annotations, desc=""):
-        reference_dataset, ellipses, arrows = (
-            annotations.reference, annotations.ellipses, annotations.arrows)
+    def render_xml(self, annotationSet, desc=""):
+        # reference_dataset, ellipses, arrows = (
+        #     annotations.reference, annotations.ellipses, annotations.arrows)
 
-        return self.template.render(reference=reference_dataset, description=desc, arrows=arrows, ellipses=ellipses)
+        return self.template.render(annotation_set=annotationSet)
+
+    def computeVolumeHash(self, datasets):
+        m = hashlib.md5()
+        for d in datasets:
+            m.update(d.SOPInstanceUID.encode('utf-8'))
+        return m.digest().hex().strip().upper()
 
     def generate(self, dcm_series, annotation_set):
         ex = dcm_series[0]
@@ -104,7 +111,7 @@ class VisageWriter():
         ds.SeriesInstanceUID = pydicom.uid.generate_uid(
             prefix='1.2.276.0.45.1.7.3.')
         ds.StudyID = ex.StudyID
-        ds.SeriesNumber = '9812'  # TODO
+        ds.SeriesNumber = '9950'  # TODO
         ds.InstanceNumber = '1'
         ds.RescaleIntercept = ex.get('RescaleIntercept', '0')
         ds.RescaleSlope = ex.get('RescaleIntercept', '1')
@@ -130,92 +137,40 @@ class VisageWriter():
         refd_image_sequence = Sequence()
         refd_series1.ReferencedImageSequence = refd_image_sequence
 
+        first = True
         for r in dcm_series:
-            # Referenced Image Sequence: Referenced Image 1
             refd_image = Dataset()
             refd_image.ReferencedSOPClassUID = r.SOPClassUID
             refd_image.ReferencedSOPInstanceUID = r.SOPInstanceUID
-
-            annotations = annotation_set.get(r.SOPInstanceUID)
-
-            refd_image[(0x71, 0x10)] = pydicom.DataElement(
-                (0x71, 0x10), 'LO', 'Visage')
-            refd_image[(0x71, 0x1061)] = pydicom.DataElement(
-                (0x71, 0x1061), 'UT', hashlib.md5(r.SOPInstanceUID.encode('utf-8')).digest().hex().upper())  # 8D36318460A966408373B92AE092D3CA
-            if annotations:
+            if first:
+                refd_image[(0x71, 0x10)] = pydicom.DataElement(
+                    (0x71, 0x10), 'LO', 'Visage')
+                refd_image[(0x71, 0x1061)] = pydicom.DataElement(
+                    (0x71, 0x1061), 'UT', self.computeVolumeHash(dcm_series))
                 refd_image[(0x71, 0x1062)] = pydicom.DataElement(
-                    (0x71, 0x1062), 'OB', self.encode(f"""<?xml version="1.0" encoding="UTF-8"?>
-<annotations version="1.0.0.0">
- <ellipse roi="1">
-  <name id="1" group="ROI" appendix="2D"></name>
-  <coordinate_system>
-   <origin>1.9740447998 17.6970977783 0.5</origin>
-   <axis_x>1 1.57042052251e-07 0</axis_x>
-   <axis_y>-1.19442560731e-07 1 0</axis_y>
-   <axis_z>0 0 1</axis_z>
-  </coordinate_system>
-  <style>
-   <color>1 1 1 1</color>
-   <line_width>2</line_width>
-   <font bold="1" size="11" italics="0">MS Shell Dlg 2</font>
-  </style>
-  <label>ROI (2D)</label>
-  <protected>0</protected>
-  <creator>wiggir01</creator>
-  <scope>
-   <show_on_parallel_planes>0</show_on_parallel_planes>
-  </scope>
-  <keyviews>
-   <keyview_number>1</keyview_number>
-  </keyviews>
-  <geometry>
-   <radius_x>{random.randint(50,150)}.05770874</radius_x>
-   <radius_y>158.87789917</radius_y>
-  </geometry>
-  <text_position>AUTOMATIC</text_position>
-  <relative_anchor>1 -1</relative_anchor>
- </ellipse>
-</annotations>
-"""))
+                    (0x71, 0x1062), 'OB', self.encode(self.render_xml(annotation_set)))
                 refd_image[(0x71, 0x1063)] = pydicom.DataElement(
                     (0x71, 0x1063), 'ST', '1.0.0.0')
-                refd_image[(0x71, 0x1064)] = pydicom.DataElement(
-                    (0x71, 0x1064), 'OB', self.encode(r"""<?xml version="1.0" encoding="UTF-8"?>
-<key_views version="0.1.0.0">
- <key_view is_manual="0">
-  <number>1</number>
-  <coordinate_system>
-   <origin>0.5 0.5 0.5</origin>
-   <axis_x>1 1.50995802528e-07 0</axis_x>
-   <axis_y>1.50995802528e-07 -1 0</axis_y>
-   <axis_z>0 0 -1</axis_z>
-  </coordinate_system>
-  <size>511.000061035 511.000061035</size>
-  <angle>1 1</angle>
-  <crosshair>
-   <position>0 0 0</position>
-  </crosshair>
- </key_view>
-</key_views>
-"""))
-            else:
-                refd_image[(0x71, 0x1064)] = pydicom.DataElement(
-                    (0x71, 0x1064), 'OB', self.encode("""<?xml version="1.0" encoding="UTF-8"?><key_views version="0.1.0.0"/>
-"""))
+                # these aren't necessary
+                # refd_image[(0x71, 0x1064)] = pydicom.DataElement(
+                #     (0x71, 0x1064), 'OB', self.encode(self.key_views.render(datasets=dcm_series)))
+                refd_image[(0x71, 0x1065)] = pydicom.DataElement(
+                    (0x71, 0x1065), 'ST', '0.1.0.0')
 
-            refd_image[(0x71, 0x1065)] = pydicom.DataElement(
-                (0x71, 0x1065), 'ST', '0.1.0.0')
+                ref_sequence = pydicom.Sequence()
+                for r in dcm_series:
+                    d = Dataset()
+                    d.ReferencedSOPInstanceUID = r.SOPInstanceUID
+                    ref_sequence.append(d)
+                refd_image[(0x71, 0x1066)] = pydicom.DataElement(
+                    (0x71, 0x1066), 'SQ', ref_sequence
+                )
 
-            d = Dataset()
-            d.ReferencedSOPInstanceUID = r.SOPInstanceUID
-            refd_image[(0x71, 0x1066)] = pydicom.DataElement(
-                (0x71, 0x1066), 'SQ', pydicom.Sequence(
-                    [d])
-            )
-
+                first = False
             refd_image_sequence.append(refd_image)
 
         refd_series1.SeriesInstanceUID = ex.SeriesInstanceUID
+
         refd_series_sequence.append(refd_series1)
 
         # Softcopy VOI LUT Sequence
@@ -247,7 +202,8 @@ class VisageWriter():
         displayed_area_selection1.DisplayedAreaBottomRightHandCorner = [
             512, 512]  # todo
         displayed_area_selection1.PresentationSizeMode = 'SCALE TO FIT'
-        displayed_area_selection1.PresentationPixelAspectRatio = [1, 1]
+        displayed_area_selection1.PresentationPixelSpacing = [1, 1]
+        # displayed_area_selection1.PresentationPixelAspectRatio = [1.0, 1.0]
         displayed_area_selection_sequence.append(displayed_area_selection1)
 
         return ds
@@ -268,14 +224,17 @@ class VisageWriter():
 # aset = AnnotationSet([annotations])
 # print(aset)
 
-datasets = [dcmread('/vagrant/test_annotations/slice.0.dcm'),
-            dcmread('/vagrant/test_annotations/slice.1.dcm'),
-            dcmread('/vagrant/test_annotations/slice.2.dcm')]
-aset = AnnotationSet([Annotations([], [], datasets[0]),
-                      Annotations([], [], datasets[1]),
-                      Annotations([], [], datasets[2])])
+datasets = [dcmread('/vagrant/julia-volume/slice.0.dcm'),
+            dcmread('/vagrant/julia-volume/slice.1.dcm'),
+            dcmread('/vagrant/julia-volume/slice.2.dcm')]
+aset = AnnotationSet([Annotations([Ellipse.from_center(Point(255, 255), 50, 50, 'mm', 0)], [], datasets[0]),
+                      Annotations([Ellipse.from_center(
+                          Point(255, 255), 40, 40, 'mm', 0)], [], datasets[1]),
+                      Annotations([Ellipse.from_center(Point(255, 255), 30, 30, 'mm', 0)], [], datasets[2])])
 writer = VisageWriter()
+
+# print(writer.render_xml(aset))
 result = writer.generate(datasets, aset)
-result.save_as(f"/vagrant/test_annotations/annotations-gen.dcm")
-os.system(f"dcmodify -gin /vagrant/test_annotations/annotations-gen.dcm")
-# print(result)
+result.save_as(f"/vagrant/julia-volume/annotations-gen.dcm")
+os.system(f"dcmodify -gin /vagrant/julia-volume/annotations-gen.dcm")
+# # print(result)

@@ -1,7 +1,48 @@
 from collections import namedtuple
 from pydicom.sr.codedict import codes
-
+from pydicom import dcmread
 Point = namedtuple('Point', ['x', 'y'])
+
+
+class AnnotationSet():
+    def __init__(self, annotation_sets):
+        self.__annotation_sets = {}
+        self.__list = annotation_sets
+        for set_ in annotation_sets:
+            self.__annotation_sets[set_.reference.SOPInstanceUID] = set_
+
+    def keys(self):
+        return self.__annotation_sets.keys()
+
+    def values(self):
+        return self.__annotation_sets.values()
+
+    def __iter__(self):
+        return self.__list.__iter__()
+
+    def __next__(self):
+        return self.__list.__next__()
+
+    def __getitem__(self, key):
+        return self.__annotation_sets[key]
+
+    def get(self, key):
+        return self.__annotation_sets.get(key)
+
+    def __repr__(self) -> str:
+        return self.__annotation_sets.__repr__()
+
+
+class Annotations():
+    def __init__(self, ellipses, arrows, reference_dataset=None):
+        self.ellipses = ellipses
+        self.arrows = arrows
+        if type(reference_dataset) is str:
+            reference_dataset = dcmread(reference_dataset)
+
+        self.reference = reference_dataset
+        if reference_dataset is not None:
+            self.SOPInstanceUID = reference_dataset.SOPInstanceUID
 
 
 class Measurement():
@@ -25,6 +66,9 @@ class Ellipse(Measurement):
         self.right = right
         self.topleft = Point(left.x, top.y)
         self.bottomright = Point(right.x, bottom.y)
+        self.center = Point(top.x, left.y)
+        self.ry = (bottom.y - top.y) / 2.0
+        self.rx = (right.x - left.x) / 2.0
 
     @classmethod
     def from_center(cls, c, r1, r2, unit, value):
