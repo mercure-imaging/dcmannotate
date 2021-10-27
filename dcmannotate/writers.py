@@ -6,12 +6,12 @@ import highdicom as hd
 import numpy as np
 from PIL import Image, ImageDraw
 
-from vector import Vector
+from .vector import Vector
 import pathlib
 
 from pydicom import dcmread
 from pydicom.uid import generate_uid
-from annotations import Point
+from .annotations import Point
 
 
 class SRWriter():
@@ -23,7 +23,7 @@ class SRWriter():
             undefined=StrictUndefined
         )
         env.globals['generate_uid'] = generate_uid
-        self.template = env.get_template("base")
+        self.template = env.get_template("base.xml")
 
     def generate_xml(self, annotations, description):
         reference_dataset, ellipses, arrows = (

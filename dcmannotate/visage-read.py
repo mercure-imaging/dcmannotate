@@ -4,7 +4,11 @@ import zlib
 from pydicom import dcmread
 import pydicom
 import sys
-from visage import decode
+
+
+def decode(t):
+    return zlib.decompress(t[4:]).decode('utf-8')
+
 
 ds = dcmread(sys.argv[1])
 sequence = ds.ReferencedSeriesSequence[0].ReferencedImageSequence[0]
