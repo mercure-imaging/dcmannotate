@@ -11,22 +11,24 @@ import pathlib
 
 from pydicom import dcmread
 from pydicom.uid import generate_uid
+from annotations import Point
 
 
 class SRWriter():
     def __init__(self):
         env = Environment(
             loader=FileSystemLoader(pathlib.Path(
-                __file__).parent.resolve() / 'templates'),
+                __file__).parent.resolve() / 'templates' / 'tid1500'),
             autoescape=True,
             undefined=StrictUndefined
         )
         env.globals['generate_uid'] = generate_uid
         self.template = env.get_template("base")
 
-    def generate_xml(self, reference_dataset, description, ellipses=[], arrows=[]):
-        if type(reference_dataset) is str:
-            reference_dataset = dcmread(reference_dataset)
+    def generate_xml(self, annotations, description):
+        reference_dataset, ellipses, arrows = (
+            annotations.reference, annotations.ellipses, annotations.arrows)
+
         return self.template.render(reference=reference_dataset, description=description, arrows=arrows, ellipses=ellipses)
 
 
@@ -60,9 +62,9 @@ class SecondaryCaptureWriter():
         # Now draw the arrowhead triangle
         draw.polygon((vtx0, vtx1, (ptB.x, ptB.y)), fill=color)
 
-    def generate(self, reference_dataset, ellipses, arrows, window):
-        if type(reference_dataset) is str:
-            reference_dataset = dcmread(reference_dataset)
+    def generate(self, annotations, window):
+        reference_dataset, ellipses, arrows = (
+            annotations.reference, annotations.ellipses, annotations.arrows)
 
         # Create an image for display by windowing the original image and drawing a
         # bounding box over it using Pillow's ImageDraw module

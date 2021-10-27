@@ -7,14 +7,17 @@ from writers import *
 from annotations import *
 
 writer = SecondaryCaptureWriter()
-writer.generate('../mandel.dcm', [Ellipse(Point(256, 128), Point(256, 370), Point(
+
+test_set = Annotations([Ellipse(Point(256, 128), Point(256, 370), Point(
     128, 256), Point(370, 256), unit='Millimeter', value=1234)],
     [PointMeasurement(0, 0, 'Millimeter', 100),
      PointMeasurement(512, 512, 'Millimeter', 10000),
      PointMeasurement(0, 512, 'Millimeter', 10000),
      PointMeasurement(512, 0, 'Millimeter', 1000000),
-     PointMeasurement(256, 256, 'Millimeter', 1000000)],
-    [0, 255]).save_as('/vagrant/sc_test.dcm')
+     PointMeasurement(256, 256, 'Millimeter', 1000000)], '../mandel.dcm')
+
+writer.generate(test_set,
+                [0, 255]).save_as('/vagrant/sc_test.dcm')
 
 # k = Ellipse.from_dict(dict(top=Point(256,128), bottom=Point(256,370), left= Point(128, 256 ),right= Point(370,256), unit='Millimeter', value=1234))
 
