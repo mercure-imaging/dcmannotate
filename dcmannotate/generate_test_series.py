@@ -28,8 +28,8 @@ def mandelbrot(m=512, n=256):
     return M.astype(np.uint8)
 
 
-def julia(arg, m=512, n=512):
-    x = np.linspace(-2, 2, num=m).reshape((1, m))
+def julia(arg, m=256, n=512):
+    x = np.linspace(-1, 1, num=m).reshape((1, m))
     y = np.linspace(-2, 2, num=n).reshape((n, 1))
     C = np.tile(x, (n, 1)) + 1j * np.tile(y, (1, m))
 
@@ -53,7 +53,9 @@ def nums(n):
 dt = datetime.datetime.now()
 
 
-def generate_file(study, series, slice_number, acc, studyid, desc, image):
+def generate_file(study, series, slice_number, acc, studyid, desc, image, orientation=[[1, 0, 0], [0, 1, 0]]):
+    normal_vec = np.cross(orientation[0], orientation[1])
+
     file_meta = FileMetaDataset()
     file_meta.FileMetaInformationGroupLength = 200
     file_meta.FileMetaInformationVersion = b'\x00\x01'
@@ -90,18 +92,20 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image):
     ds.StudyID = studyid
     ds.ImageComments = 'NOT FOR DIAGNOSTIC USE'
     ds.PatientPosition = 'HFS'
-    ds.ImageOrientationPatient = [1, 0, 0, 0, 1, 0]
-    ds.ImagePositionPatient = [-160, -90, 7.5*slice_number+170]
+    ds.ImageOrientationPatient = [*orientation[0], *orientation[1]]
+    ds.SpacingBetweenSlices = 7.5
+    ds.ImagePositionPatient = list([0, 0, 0] +
+                                   normal_vec*ds.SpacingBetweenSlices*slice_number)
+    print(ds.ImagePositionPatient)
     ds.SliceLocation = 7.5*slice_number+170
     ds.SamplesPerPixel = 1
     ds.PhotometricInterpretation = 'MONOCHROME2\0'
     ds.SliceThickness = 5
-    ds.SpacingBetweenSlices = 7.5
     ds.PixelData = image.tobytes()
     ds.NumberOfFrames = "1"
-    ds.Rows = 512
-    ds.Columns = 512
-    ds.PixelSpacing = [1, 1]
+    ds.Rows = np.size(image, 0)
+    ds.Columns = np.size(image, 1)
+    ds.PixelSpacing = [2, 2]
     ds.PixelAspectRatio = [1, 1]
     ds.BitsAllocated = 16
     ds.BitsStored = 16
@@ -113,7 +117,7 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image):
     return ds
 
 
-def generate_test_series(pt=-.3-0.j, n=10):
+def generate_test_series(pt=-.3-0.j, n=10, orientation=[[1, 0, 0], [0, 1, 0]]):
     study = pydicom.uid.generate_uid(
         prefix='1.2.276.0.7230010.3.1.2.')
     series = pydicom.uid.generate_uid(
@@ -126,8 +130,9 @@ def generate_test_series(pt=-.3-0.j, n=10):
     for i in range(n):
         pt_at = pt+.1j*(i-n/2)
         array = julia(pt_at)
+        # print(array)
         datasets.append(generate_file(study, series, i, acc,
-                        study, description, array))
+                        study, description, array, orientation))
     return datasets
 
 

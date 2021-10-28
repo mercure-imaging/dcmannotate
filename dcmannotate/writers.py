@@ -4,7 +4,7 @@ from jinja2 import StrictUndefined
 
 import highdicom as hd
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from .vector import Vector
 import pathlib
@@ -47,15 +47,15 @@ class SecondaryCaptureWriter():
         # Now we can work out the x,y coordinates of the bottom of the arrowhead triangle
 
         vec = Vector(ptB.x-ptA.x, ptB.y-ptA.y).normalize()
-        xb = x1-vec.x*10
-        yb = y1-vec.y*10
+        xb = x1-vec.x*8
+        yb = y1-vec.y*8
 
         # Draw the line without arrows
         xy = ((ptA.x, ptA.y), (xb, yb))
         draw.line(xy, width=width, fill=color)
 
-        vtx0 = (xb+-vec.y*10, yb+vec.x*10)
-        vtx1 = (xb+vec.y*10, yb+-vec.x*10)
+        vtx0 = (xb+-vec.y*8, yb+vec.x*8)
+        vtx1 = (xb+vec.y*8, yb+-vec.x*8)
         # draw.point((xb,yb), fill=(255,0,0))    # DEBUG: draw point of base in red - comment out draw.polygon() below if using this line
         # im.save('DEBUG-base.png')              # DEBUG: save
 
@@ -86,7 +86,9 @@ class SecondaryCaptureWriter():
         # Cast to a PIL image for easy drawing of boxes and text
         pil_image = Image.fromarray(windowed_image)
         draw_obj = ImageDraw.Draw(pil_image)
-
+        draw_obj.fontmode = "1"
+        font = ImageFont.truetype(
+            '/vagrant/UbuntuMono-Bold.ttf', 12)
         for ellipse in ellipses:
             draw_obj.ellipse(
                 ((ellipse.topleft.x, ellipse.topleft.y),
@@ -95,8 +97,6 @@ class SecondaryCaptureWriter():
                 fill=None,
                 width=3
             )
-            draw_obj.text(xy=[ellipse.right.x, ellipse.right.y],
-                          text=f"{ellipse.value} {ellipse.unit.value}", fill='red')
 
         for arrow in arrows:
             text = f"{arrow.value} {arrow.unit.value}"
@@ -114,9 +114,15 @@ class SecondaryCaptureWriter():
                 text_offset[0] = pil_image.width - \
                     (start_point.x + text_size[0])
 
-            self.arrowedLine(draw_obj, start_point, arrow, width=3)
+            self.arrowedLine(draw_obj, start_point, arrow, width=2)
+
+        for arrow in arrows:
             draw_obj.text(xy=[start_point.x + text_offset[0], start_point.y + text_offset[1]],
-                          text=text, fill='red')
+                          text=text, fill='cyan', font=font)
+
+        for ellipse in ellipses:
+            draw_obj.text(xy=[int(ellipse.right.x), int(ellipse.right.y)],
+                          text=f"{ellipse.value} {ellipse.unit.value}", fill='cyan', font=font)
 
             # Convert to numpy array
         pixel_array = np.array(pil_image)

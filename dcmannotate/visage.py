@@ -61,11 +61,11 @@ class VisageWriter():
 
         return self.template.render(annotation_set=annotationSet)
 
-    def computeVolumeHash(self, datasets):
+    def volume_hash(self, datasets):
         m = hashlib.md5()
         for d in datasets:
             m.update(d.SOPInstanceUID.encode('utf-8'))
-        return m.digest().hex().strip().upper()
+        return m.hexdigest().upper()
 
     def generate(self, dcm_series, annotation_set):
         ex = dcm_series[0]
@@ -146,7 +146,7 @@ class VisageWriter():
                 refd_image[(0x71, 0x10)] = pydicom.DataElement(
                     (0x71, 0x10), 'LO', 'Visage')
                 refd_image[(0x71, 0x1061)] = pydicom.DataElement(
-                    (0x71, 0x1061), 'UT', self.computeVolumeHash(dcm_series))
+                    (0x71, 0x1061), 'UT', self.volume_hash(dcm_series))
                 refd_image[(0x71, 0x1062)] = pydicom.DataElement(
                     (0x71, 0x1062), 'OB', self.encode(self.render_xml(annotation_set)))
                 refd_image[(0x71, 0x1063)] = pydicom.DataElement(
@@ -200,7 +200,7 @@ class VisageWriter():
 
         displayed_area_selection1.DisplayedAreaTopLeftHandCorner = [1, 1]
         displayed_area_selection1.DisplayedAreaBottomRightHandCorner = [
-            512, 512]  # todo
+            ex.Columns, ex.Rows]
         displayed_area_selection1.PresentationSizeMode = 'SCALE TO FIT'
         displayed_area_selection1.PresentationPixelSpacing = [1, 1]
         # displayed_area_selection1.PresentationPixelAspectRatio = [1.0, 1.0]
