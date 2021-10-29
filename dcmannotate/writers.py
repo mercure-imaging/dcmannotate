@@ -1,4 +1,8 @@
 
+from pathlib import Path
+import tempfile
+from subprocess import run, PIPE
+from typing import Type
 from jinja2 import Environment, FileSystemLoader
 from jinja2 import StrictUndefined
 
@@ -11,7 +15,7 @@ import pathlib
 
 from pydicom import dcmread
 from pydicom.uid import generate_uid
-from .annotations import Point
+from .annotations import AnnotationSet, DicomVolume, Point
 
 
 class SRWriter():
@@ -25,11 +29,20 @@ class SRWriter():
         env.globals['generate_uid'] = generate_uid
         self.template = env.get_template("base.xml")
 
-    def generate_xml(self, annotations, description):
+    def generate_slice_xml(self, annotations, description):
         reference_dataset, ellipses, arrows = (
             annotations.reference, annotations.ellipses, annotations.arrows)
 
         return self.template.render(reference=reference_dataset, description=description, arrows=arrows, ellipses=ellipses)
+
+    def generate_dicoms(self, aset):
+        xml_docs = self.generate_xml(aset)
+        for annotations, xml in zip(aset, xml_docs):
+            p = run(['xml2dsr', '-', str(annotations.reference.from_path.with_suffix('.sr.dcm'))], stdout=PIPE,
+                    input=xml, encoding='utf-8')
+
+    def generate_xml(self, aset):
+        return [self.generate_slice_xml(a, "") for a in aset]
 
 
 class SecondaryCaptureWriter():
@@ -62,10 +75,51 @@ class SecondaryCaptureWriter():
         # Now draw the arrowhead triangle
         draw.polygon((vtx0, vtx1, (ptB.x, ptB.y)), fill=color)
 
-    def generate(self, annotations, window):
-        reference_dataset, ellipses, arrows = (
-            annotations.reference, annotations.ellipses, annotations.arrows)
+    def sc_from_ref(self, reference_dataset, pixel_array):
+        sc = hd.sc.SCImage.from_ref_dataset(
+            ref_dataset=reference_dataset,
+            pixel_array=pixel_array,
+            photometric_interpretation=hd.PhotometricInterpretationValues.RGB,
+            bits_allocated=8,
+            coordinate_system=hd.CoordinateSystemNames.PATIENT,
+            series_instance_uid=hd.UID(),
+            sop_instance_uid=hd.UID(),
+            series_number=100,
+            instance_number=getattr(reference_dataset, 'InstanceNumber', None),
+            manufacturer='Manufacturer',
+            pixel_spacing=getattr(reference_dataset, 'PixelSpacing', None),
+            patient_orientation=getattr(
+                reference_dataset, 'PatientOrientation', 'LP')
+        )
+        sc.ImageOrientationPatient = reference_dataset.ImageOrientationPatient
+        sc.SpacingBetweenSlices = reference_dataset.SpacingBetweenSlices
+        sc.ImagePositionPatient = reference_dataset.ImagePositionPatient
+        sc.FrameOfReferenceUID = reference_dataset.FrameOfReferenceUID
+        return sc
 
+    def generate(self, volume, annotation_set, window=[0, 255]):
+        if not isinstance(volume, DicomVolume):
+            raise TypeError(
+                f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}")
+        if not isinstance(annotation_set, AnnotationSet):
+            raise TypeError(
+                f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}")
+
+        scs = []
+        uid = hd.UID()
+        for slice in volume:
+            sc = None
+            if slice.SOPInstanceUID in annotation_set:
+                sc = self.generate_slice(
+                    annotation_set[slice.SOPInstanceUID], window)
+            else:
+                sc = self.sc_from_ref(
+                    slice, self.window_image(slice, window))
+            sc.SeriesInstanceUID = uid
+            scs.append(sc)
+        return DicomVolume(scs)
+
+    def window_image(self, reference_dataset, window):
         # Create an image for display by windowing the original image and drawing a
         # bounding box over it using Pillow's ImageDraw module
         slope = getattr(reference_dataset, 'RescaleSlope', 1)
@@ -81,8 +135,13 @@ class SecondaryCaptureWriter():
         windowed_image = windowed_image.astype(np.uint8)
 
         # Create RGB channels
-        windowed_image = np.tile(windowed_image[:, :, np.newaxis], [1, 1, 3])
+        return np.tile(windowed_image[:, :, np.newaxis], [1, 1, 3])
 
+    def generate_slice(self, annotations, window):
+        reference_dataset, ellipses, arrows = (
+            annotations.reference, annotations.ellipses, annotations.arrows)
+
+        windowed_image = self.window_image(reference_dataset, window)
         # Cast to a PIL image for easy drawing of boxes and text
         pil_image = Image.fromarray(windowed_image)
         draw_obj = ImageDraw.Draw(pil_image)
@@ -136,18 +195,5 @@ class SecondaryCaptureWriter():
         # Create the secondary capture image. By using the `from_ref_dataset`
         # constructor, all the patient and study information willl be copied from the
         # original image dataset
-        sc_image = hd.sc.SCImage.from_ref_dataset(
-            ref_dataset=reference_dataset,
-            pixel_array=pixel_array,
-            photometric_interpretation=hd.PhotometricInterpretationValues.RGB,
-            bits_allocated=8,
-            coordinate_system=hd.CoordinateSystemNames.PATIENT,
-            series_instance_uid=hd.UID(),
-            sop_instance_uid=hd.UID(),
-            series_number=100,
-            instance_number=1,
-            manufacturer='Manufacturer',
-            pixel_spacing=getattr(reference_dataset, 'PixelSpacing', None),
-            patient_orientation=patient_orientation
-        )
+        sc_image = self.sc_from_ref(reference_dataset, pixel_array)
         return sc_image

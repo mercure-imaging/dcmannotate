@@ -1,35 +1,49 @@
+from subprocess import run, PIPE
 import numpy as np
 from collections.abc import Iterable
 from pathlib import Path
 from collections import namedtuple
 import types
+from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
 Point = namedtuple('Point', ['x', 'y'])
 
 
 class DicomVolume():
-    def __init__(self, datasets):
-        if datasets is not None:
-            self.load(datasets)
+    def __init__(self, datasets, read_pixels=True):
+        self.load(datasets, read_pixels)
 
-    def load(self, param):
+    def load(self, param, read_pixels=True):
         if type(param) is str:
             param = Path(param)
 
         if isinstance(param, Path) and param.is_dir():
             files = param.iterdir()
-        else:  # it's a list or a generator eg Path.glob
-            files = list(param)
-        self.files = list(map(Path, files))
+        elif isinstance(param, list) and isinstance(param[0], Dataset):
+            self.files = []
+            datasets = param
+        else:
+            # self.files = list(map(Path, param))
+            datasets = []
+            for path in param:
+                ds = dcmread(path, stop_before_pixels=(not read_pixels))
+                ds.from_path = Path(path)
+                datasets.append(ds)
 
-        datasets = list(map(dcmread, files))
         self.verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
 
+    def save_as(self, pattern):
+        pattern = str(pattern)
+        if '*' not in pattern:
+            raise Exception("Pattern must include a '*' wildcard.")
+        for sc in self.__datasets:
+            sc.save_as(pattern.replace('*', f'{sc.z_index:03}'))
+
     def sort_by_z(self, datasets):
         """
-            Sort the dicoms along the orientation axis. 
+            Sort the dicoms along the orientation axis.
         """
         orientation = datasets[0].ImageOrientationPatient  # These will all be identical
         # Doesn't matter which one you use, we are moving relative to it
@@ -55,10 +69,12 @@ class DicomVolume():
         # actually sort by the calculated z values
         sorted_by_z = sorted(datasets, key=lambda x: zs[x.SOPInstanceUID])
 
-        # TODO: store the index of each slice in its InstanceNumber tag
-        # This should probably be stored somewhere else, not inside the dataset
+        z_spacing = np.abs(np.linalg.norm(
+            np.asarray(sorted_by_z[1].ImagePositionPatient)-np.asarray(sorted_by_z[0].ImagePositionPatient)))
+
         for k in range(len(sorted_by_z)):
-            sorted_by_z[k].InstanceNumber = k+1  # TODO
+            sorted_by_z[k].z_index = k+1
+            sorted_by_z[k].z_spacing = z_spacing
         return sorted_by_z
 
     def verify(self, datasets):
@@ -71,9 +87,14 @@ class DicomVolume():
         if not all(attr_same(datasets, attr) for attr in tags_equal):
             raise Exception(
                 f"Not a volume: tags [{', '.join(tags_equal)}] must be present and identical")
+        for tag in tags_equal:
+            setattr(self, tag, getattr(datasets[0], tag))
 
     def __getitem__(self, key):
         return self.__datasets[key]
+
+    def __len__(self):
+        return self.__datasets.__len__()
 
     def get(self, key):
         return self.__datasets.get(key)
@@ -85,7 +106,7 @@ class DicomVolume():
         return self.__datasets.__next__()
 
     def __repr__(self) -> str:
-        return f"<Volume {'/'.join(self.files[0].parts[-3:-1])} {self.__datasets[0].Rows}x{self.__datasets[0].Columns}x{len(self.__datasets)} -> {self.axis_z}>"
+        return f"<Volume {self.__datasets[0].Rows}x{self.__datasets[0].Columns}x{len(self.__datasets)} -> {self.axis_z}>"
         # return self.__datasets.__repr__()
 
 
@@ -111,11 +132,14 @@ class AnnotationSet():
     def __getitem__(self, key):
         return self.__annotation_sets[key]
 
-    def get(self, key):
-        return self.__annotation_sets.get(key)
+    def get(self, key, default=None):
+        return self.__annotation_sets.get(key, default)
 
     def __repr__(self) -> str:
         return self.__annotation_sets.__repr__()
+
+    def __contains__(self, k):
+        return self.__annotation_sets.__contains__(k)
 
 
 class Annotations():
@@ -154,7 +178,7 @@ class Ellipse(Measurement):
         self.ry = (bottom.y - top.y) / 2.0
         self.rx = (right.x - left.x) / 2.0
 
-    @classmethod
+    @ classmethod
     def from_center(cls, c, r1, r2, unit, value):
         return Ellipse(Point(c.x, c.y-r1), Point(c.x, c.y+r1), Point(c.x-r2, c.y), Point(c.x+r2, c.y), unit, value)
 

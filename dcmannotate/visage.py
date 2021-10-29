@@ -17,7 +17,7 @@ from jinja2 import StrictUndefined
 
 from .annotations import *
 import hashlib
-
+from datetime import datetime
 
 pydicom.datadict.add_private_dict_entries('Visage',
                                           {0x00711062: ('OB', '1', 'AnnotationData'),
@@ -80,11 +80,15 @@ class VisageWriter():
         file_meta.ImplementationClassUID = '1.2.276.0.45.1.1.0.71.20130122'
         file_meta.ImplementationVersionName = 'DicomWeb_71'
 
+        dt = datetime.now()
         # Main data elements
         ds = Dataset()
+        # Genuinely no idea why Dataset() doesn't include a default preamble
+        # 128*b'\0' would be fine, but let's just borrow it from the original.
+        ds.preamble = getattr(ex, 'preamble', 128*b'\0')
         ds.SpecificCharacterSet = 'ISO_IR 100'
-        ds.InstanceCreationDate = '20211018'  # TODO
-        ds.InstanceCreationTime = '170058'  # TODO
+        ds.InstanceCreationDate = dt.strftime('%Y%m%d')
+        ds.InstanceCreationTime = dt.strftime('%H%M%S')
         ds.SOPClassUID = '1.2.840.10008.5.1.4.1.1.11.1'
         ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
         ds.StudyDate = ex.StudyDate

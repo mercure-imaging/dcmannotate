@@ -71,6 +71,7 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image, orient
 
     # Main data elements
     ds = Dataset()
+    ds.preamble = 128*b'\0'
     ds.SOPClassUID = '1.2.840.10008.5.1.4.1.1.4'
     ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
     # pydicom.uid.generate_uid(
@@ -141,8 +142,6 @@ def generate_series(f, n):
     datasets = generate_test_series(.3-0.j, n)
     for i, d in enumerate(datasets):
         d.save_as(f+f"/slice.{i}.dcm")
-
-    os.system(f"dcmodify -gin {f}/slice.*.dcm")
 
 
 if __name__ == "__main__":
