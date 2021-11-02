@@ -73,7 +73,7 @@ class DicomVolume():
             np.asarray(sorted_by_z[1].ImagePositionPatient)-np.asarray(sorted_by_z[0].ImagePositionPatient)))
 
         for k in range(len(sorted_by_z)):
-            sorted_by_z[k].z_index = k+1
+            sorted_by_z[k].z_index = k
             sorted_by_z[k].z_spacing = z_spacing
         return sorted_by_z
 

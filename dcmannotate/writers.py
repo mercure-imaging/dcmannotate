@@ -38,7 +38,8 @@ class SRWriter():
     def generate_dicoms(self, aset):
         xml_docs = self.generate_xml(aset)
         for annotations, xml in zip(aset, xml_docs):
-            p = run(['xml2dsr', '-', str(annotations.reference.from_path.with_suffix('.sr.dcm'))], stdout=PIPE,
+            frompath = annotations.reference.from_path
+            p = run(['xml2dsr', '-', str(frompath.with_name(frompath.stem+"_sr.dcm"))], stdout=PIPE,
                     input=xml, encoding='utf-8')
 
     def generate_xml(self, aset):

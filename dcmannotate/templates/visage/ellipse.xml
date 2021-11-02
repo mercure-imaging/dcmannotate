@@ -1,0 +1,26 @@
+<ellipse roi="1">
+    <name appendix="2D" id="{{loop_index}}" group="ROI"></name>
+    <coordinate_system>
+        <origin>{{ellipse.center.x}} {{ellipse.center.y}} {{annotations.reference.z_index + 0.5}}</origin>
+        <axis_x>1 0 0</axis_x>
+        <axis_y>0 1 0</axis_y>
+        <axis_z>0 0 {{1.0/annotations.reference.z_spacing}}</axis_z>
+    </coordinate_system>
+    <style>
+        <color>1 0 0 1</color>
+        <line_width>2</line_width>
+        <font size="11" italics="0" bold="1">MS Shell Dlg 2</font>
+    </style>
+    <label>{{ ellipse.value }} {{ ellipse.unit.value }}</label>
+    <protected>0</protected>
+    <creator>generated</creator>
+    <scope>
+        <show_on_parallel_planes>0</show_on_parallel_planes>
+    </scope>
+    <geometry>
+        <radius_x>{{ellipse.rx}}</radius_x>
+        <radius_y>{{ellipse.ry}}</radius_y>
+    </geometry>
+    <text_position>AUTOMATIC</text_position>
+    <relative_anchor>1 -1</relative_anchor>
+</ellipse>

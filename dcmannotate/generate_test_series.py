@@ -60,11 +60,9 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image, orient
     file_meta.FileMetaInformationGroupLength = 200
     file_meta.FileMetaInformationVersion = b'\x00\x01'
     file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.4'
-    # visage DOES NOT LIKE the results of generate_uid
 
-    file_meta.MediaStorageSOPInstanceUID = f'1.2.276.0.7230010.3.1.4.8323330.12952.1634918113.111112'
-    # pydicom.uid.generate_uid(
-    # prefix='1.2.276.0.7230010.3.1.4.')
+    file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid(
+        prefix='1.2.276.0.7230010.3.1.4.')
     file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'
     file_meta.ImplementationClassUID = '1.2.276.0.7230010.3.0.3.6.2'
     file_meta.ImplementationVersionName = 'OFFIS_DCMTK_362'

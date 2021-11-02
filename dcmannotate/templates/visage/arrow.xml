@@ -1,0 +1,27 @@
+<text>
+    <name id="1" group="Shape"></name>
+    <coordinate_system>
+        <origin>{{ arrow.x }} {{ arrow.y }} {{annotations.reference.z_index + 0.5}}</origin>
+        <axis_x>1 0 0</axis_x>
+        <axis_y>0 1 0</axis_y>
+        <axis_z>0 0 {{1.0/annotations.reference.z_spacing}}</axis_z>
+    </coordinate_system>
+    <style>
+        <color>1 1 0 1</color>
+        <line_width>2</line_width>
+        <font size="11" italics="0" bold="1">MS Shell Dlg 2</font>
+    </style>
+    <label>{{ arrow.value }} {{ arrow.unit.value }} </label>
+    <protected>0</protected>
+    <creator>wiggir01</creator>
+    <scope>
+        <show_on_parallel_planes>0</show_on_parallel_planes>
+    </scope>
+    <geometry>
+        <polyline>
+            <pos>0 0</pos>
+            <pos>50 50</pos>
+        </polyline>
+    </geometry>
+    <text_position>AUTOMATIC</text_position>
+</text>

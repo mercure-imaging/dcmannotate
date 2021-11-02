@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<annotations version="1.0.0.0">
+    {% filter indent(width=4) -%}
+
+    {% for annotations in annotation_set %}
+        {%- for arrow in annotations.arrows -%}
+            {% include "arrow.xml" -%}
+        {%- endfor %}
+        {%- for ellipse in annotations.ellipses -%}
+            {%- with -%}
+                {% set loop_index = loop.index %}
+                {%- include "ellipse.xml" -%}
+            {%- endwith -%}
+        {%- endfor -%}
+
+    {%- endfor -%}
+    {%- endfilter %}
+</annotations>
