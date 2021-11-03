@@ -7,12 +7,19 @@ import types
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
+
+from .writers import SRWriter, SecondaryCaptureWriter
+from .visage import VisageWriter
 Point = namedtuple('Point', ['x', 'y'])
 
 
 class DicomVolume():
-    def __init__(self, datasets, read_pixels=True):
+    def __init__(self, datasets, annotations=None, read_pixels=True):
         self.load(datasets, read_pixels)
+        self.annotation_set = annotations
+
+    def annotate_with(self, annotation_set):
+        self.annotation_set = annotation_set
 
     def load(self, param, read_pixels=True):
         if type(param) is str:
@@ -33,6 +40,20 @@ class DicomVolume():
 
         self.verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
+
+    def write_sc(self, pattern):
+        sc_writer = SecondaryCaptureWriter()
+        sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
+        DicomVolume(sc_result).save_as(pattern)
+
+    def write_sr(self, pattern=None):
+        sr_writer = SRWriter()
+        sr_writer.generate_dicoms(self.annotation_set, pattern)
+
+    def write_visage(self, filepath):
+        visage_writer = VisageWriter()
+        visage_result = visage_writer.generate(self, self.annotation_set)
+        visage_result.save_as(filepath)
 
     def save_as(self, pattern):
         pattern = str(pattern)

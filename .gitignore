@@ -1,4 +1,6 @@
 **/*.pyc
 **/*.dcm
 **/*.dsr
-*.xml
+*.dcm.xml
+*.dcmdump
+*.dump

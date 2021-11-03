@@ -1,4 +1,5 @@
 
+from collections import namedtuple
 from pathlib import Path
 import tempfile
 from subprocess import run, PIPE
@@ -15,7 +16,8 @@ import pathlib
 
 from pydicom import dcmread
 from pydicom.uid import generate_uid
-from .annotations import AnnotationSet, DicomVolume, Point
+# from .annotations import AnnotationSet, DicomVolume, Point
+Point = namedtuple('Point', ['x', 'y'])
 
 
 class SRWriter():
@@ -35,11 +37,15 @@ class SRWriter():
 
         return self.template.render(reference=reference_dataset, description=description, arrows=arrows, ellipses=ellipses)
 
-    def generate_dicoms(self, aset):
+    def generate_dicoms(self, aset, pattern=None):
         xml_docs = self.generate_xml(aset)
         for annotations, xml in zip(aset, xml_docs):
-            frompath = annotations.reference.from_path
-            p = run(['xml2dsr', '-', str(frompath.with_name(frompath.stem+"_sr.dcm"))], stdout=PIPE,
+            if pattern is None:
+                frompath = annotations.reference.from_path
+                outfile = str(frompath.with_name(frompath.stem+"_sr.dcm"))
+            else:
+                outfile = pattern.replace("*", annotations.reference.z_index)
+            p = run(['xml2dsr', '-', outfile], stdout=PIPE,
                     input=xml, encoding='utf-8')
 
     def generate_xml(self, aset):
@@ -99,12 +105,12 @@ class SecondaryCaptureWriter():
         return sc
 
     def generate(self, volume, annotation_set, window=[0, 255]):
-        if not isinstance(volume, DicomVolume):
-            raise TypeError(
-                f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}")
-        if not isinstance(annotation_set, AnnotationSet):
-            raise TypeError(
-                f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}")
+        # if not isinstance(volume, DicomVolume):
+        #     raise TypeError(
+        #         f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}")
+        # if not isinstance(annotation_set, AnnotationSet):
+        #     raise TypeError(
+        #         f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}")
 
         scs = []
         uid = hd.UID()
@@ -118,7 +124,7 @@ class SecondaryCaptureWriter():
                     slice, self.window_image(slice, window))
             sc.SeriesInstanceUID = uid
             scs.append(sc)
-        return DicomVolume(scs)
+        return scs
 
     def window_image(self, reference_dataset, window):
         # Create an image for display by windowing the original image and drawing a
