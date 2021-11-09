@@ -1,9 +1,7 @@
 
 from collections import namedtuple
-from pathlib import Path
-import tempfile
+import math
 from subprocess import run, PIPE
-from typing import Type
 from jinja2 import Environment, FileSystemLoader
 from jinja2 import StrictUndefined
 
@@ -11,12 +9,11 @@ import highdicom as hd
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from .vector import Vector
 import pathlib
+from . import annotations
 
-from pydicom import dcmread
 from pydicom.uid import generate_uid
-# from .annotations import AnnotationSet, DicomVolume, Point
+
 Point = namedtuple('Point', ['x', 'y'])
 
 
@@ -66,7 +63,11 @@ class SecondaryCaptureWriter():
         x1, y1 = (ptB.x, ptB.y)
         # Now we can work out the x,y coordinates of the bottom of the arrowhead triangle
 
-        vec = Vector(ptB.x-ptA.x, ptB.y-ptA.y).normalize()
+        # generate a normalized vector from A to B
+        vec = (ptB.x-ptA.x, ptB.y-ptA.y)
+        vec_len = math.sqrt(sum(x*x for x in vec))
+        vec = Point(vec[0] / vec_len, vec[1] / vec_len)
+
         xb = x1-vec.x*8
         yb = y1-vec.y*8
 
@@ -105,12 +106,12 @@ class SecondaryCaptureWriter():
         return sc
 
     def generate(self, volume, annotation_set, window=[0, 255]):
-        # if not isinstance(volume, DicomVolume):
-        #     raise TypeError(
-        #         f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}")
-        # if not isinstance(annotation_set, AnnotationSet):
-        #     raise TypeError(
-        #         f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}")
+        if not isinstance(volume, annotations.DicomVolume):
+            raise TypeError(
+                f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}")
+        if not isinstance(annotation_set, annotations.AnnotationSet):
+            raise TypeError(
+                f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}")
 
         scs = []
         uid = hd.UID()
@@ -153,8 +154,8 @@ class SecondaryCaptureWriter():
         pil_image = Image.fromarray(windowed_image)
         draw_obj = ImageDraw.Draw(pil_image)
         draw_obj.fontmode = "1"
-        font = ImageFont.truetype(
-            '/vagrant/UbuntuMono-Bold.ttf', 12)
+        font = ImageFont.load_default()
+
         for ellipse in ellipses:
             draw_obj.ellipse(
                 ((ellipse.topleft.x, ellipse.topleft.y),

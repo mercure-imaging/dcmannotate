@@ -8,7 +8,8 @@ from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
 
-from .writers import SRWriter, SecondaryCaptureWriter
+# from .writers import SRWriter, SecondaryCaptureWriter
+from . import writers
 from .visage import VisageWriter
 Point = namedtuple('Point', ['x', 'y'])
 
@@ -42,12 +43,12 @@ class DicomVolume():
         self.__datasets = self.sort_by_z(datasets)
 
     def write_sc(self, pattern):
-        sc_writer = SecondaryCaptureWriter()
+        sc_writer = writers.SecondaryCaptureWriter()
         sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
         DicomVolume(sc_result).save_as(pattern)
 
     def write_sr(self, pattern=None):
-        sr_writer = SRWriter()
+        sr_writer = writers.SRWriter()
         sr_writer.generate_dicoms(self.annotation_set, pattern)
 
     def write_visage(self, filepath):

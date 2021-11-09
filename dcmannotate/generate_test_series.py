@@ -3,11 +3,8 @@
 import datetime
 from pathlib import Path
 import os
-from numpy.core.arrayprint import DatetimeFormat
 import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
-from pydicom.sequence import Sequence
-from pydicom.uid import generate_uid
 import sys
 import numpy as np
 import random
@@ -95,7 +92,6 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image, orient
     ds.SpacingBetweenSlices = 7.5
     ds.ImagePositionPatient = list([0, 0, 0] +
                                    normal_vec*ds.SpacingBetweenSlices*slice_number)
-    print(ds.ImagePositionPatient)
     ds.SliceLocation = 7.5*slice_number+170
     ds.SamplesPerPixel = 1
     ds.PhotometricInterpretation = 'MONOCHROME2\0'
