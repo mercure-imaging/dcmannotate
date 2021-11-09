@@ -212,34 +212,3 @@ class VisageWriter():
 
         ds.fix_meta_info()
         return ds
-
-
-# folder = "/vagrant/test_annotations"
-# generate_series(folder, 1)
-# time.sleep(1)
-# datasets = [dcmread(x)
-#             for x in Path(folder).glob("*.dcm")]
-# annotations = Annotations([Ellipse(Point(256, 128), Point(256, 370), Point(
-#     128, 256), Point(370, 256), unit='Millimeter', value=1234)],
-#     [PointMeasurement(0, 0, 'Millimeter', 100),
-#      PointMeasurement(512, 512, 'Millimeter', 10000),
-#      PointMeasurement(0, 512, 'Millimeter', 10000),
-#      PointMeasurement(512, 0, 'Millimeter', 1000000),
-#      PointMeasurement(256, 256, 'Millimeter', 1000000)], datasets[0])
-# aset = AnnotationSet([annotations])
-# print(aset)
-if __name__ == "__main__":
-    datasets = [dcmread('/vagrant/julia-volume/slice.0.dcm'),
-                dcmread('/vagrant/julia-volume/slice.1.dcm'),
-                dcmread('/vagrant/julia-volume/slice.2.dcm')]
-    aset = AnnotationSet([Annotations([Ellipse.from_center(Point(255, 255), 50, 50, 'mm', 0)], [], datasets[0]),
-                          Annotations([Ellipse.from_center(
-                              Point(255, 255), 40, 40, 'mm', 0)], [], datasets[1]),
-                          Annotations([Ellipse.from_center(Point(255, 255), 30, 30, 'mm', 0)], [], datasets[2])])
-    writer = VisageWriter()
-
-    # print(writer.render_xml(aset))
-    result = writer.generate(datasets, aset)
-    result.save_as(f"/vagrant/julia-volume/annotations-gen.dcm")
-    # os.system(f"dcmodify -gin /vagrant/julia-volume/annotations-gen.dcm")
-# # print(result)

@@ -132,10 +132,11 @@ def generate_test_series(pt=-.3-0.j, n=10, orientation=[[1, 0, 0], [0, 1, 0]]):
 
 
 def generate_series(f, n):
-    Path(f).mkdir(parents=True, exist_ok=True)
+    f = Path(f)
+    f.mkdir(parents=True, exist_ok=True)
     datasets = generate_test_series(.3-0.j, n)
     for i, d in enumerate(datasets):
-        d.save_as(f+f"/slice.{i}.dcm")
+        d.save_as(f / f"slice.{i}.dcm")
 
 
 if __name__ == "__main__":

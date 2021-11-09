@@ -1,9 +1,6 @@
-from subprocess import run, PIPE
 import numpy as np
-from collections.abc import Iterable
 from pathlib import Path
 from collections import namedtuple
-import types
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
@@ -128,8 +125,7 @@ class DicomVolume():
         return self.__datasets.__next__()
 
     def __repr__(self) -> str:
-        return f"<Volume {self.__datasets[0].Rows}x{self.__datasets[0].Columns}x{len(self.__datasets)} -> {self.axis_z}>"
-        # return self.__datasets.__repr__()
+        return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}>"
 
 
 class AnnotationSet():
@@ -188,21 +184,33 @@ class Measurement():
 
 
 class Ellipse(Measurement):
-    def __init__(self, top, bottom, left, right, unit, value):
-        super().__init__(unit, value)
-        self.top = top
-        self.bottom = bottom
-        self.left = left
-        self.right = right
-        self.topleft = Point(left.x, top.y)
-        self.bottomright = Point(right.x, bottom.y)
-        self.center = Point(top.x, left.y)
-        self.ry = (bottom.y - top.y) / 2.0
-        self.rx = (right.x - left.x) / 2.0
+    # def __init__(self, top, bottom, left, right, unit, value):
+    #     super().__init__(unit, value)
+    #     self.top = top
+    #     self.bottom = bottom
+    #     self.left = left
+    #     self.right = right
+    #     self.topleft = Point(left.x, top.y)
+    #     self.bottomright = Point(right.x, bottom.y)
+    #     self.center = Point(top.x, left.y)
+    #     self.ry = (bottom.y - top.y) / 2.0
+    #     self.rx = (right.x - left.x) / 2.0
 
-    @ classmethod
-    def from_center(cls, c, r1, r2, unit, value):
-        return Ellipse(Point(c.x, c.y-r1), Point(c.x, c.y+r1), Point(c.x-r2, c.y), Point(c.x+r2, c.y), unit, value)
+    def __init__(self, c, rx, ry, unit, value):
+        super().__init__(unit, value)
+        self.center = c
+        self.rx = rx
+        self.ry = ry
+        self.top = Point(c.x, c.y-ry)
+        self.bottom = Point(c.x, c.y+ry)
+        self.left = Point(c.x-rx, c.y)
+        self.right = Point(c.x+rx, c.y)
+        self.topleft = Point(c.x-rx, c.y-ry)
+        self.bottomright = Point(c.x+rx, c.y+ry)
+
+    # @ classmethod
+    # def from_center(cls, c, r1, r2, unit, value):
+    #     return Ellipse(Point(c.x, c.y-r1), Point(c.x, c.y+r1), Point(c.x-r2, c.y), Point(c.x+r2, c.y), unit, value)
 
     def __repr__(self):
         return f'Ellipse<{self.top},{self.bottom},{self.left},{self.right}>({self.value} {self.unit.value})'
