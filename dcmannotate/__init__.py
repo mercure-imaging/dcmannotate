@@ -1,3 +1,3 @@
-from .main import Point, Measurement, PointMeasurement, Ellipse, SRWriter, Annotations, AnnotationSet, DicomVolume
+from .annotations import Point, Measurement, PointMeasurement, Ellipse, Annotations, AnnotationSet, DicomVolume
 from .visage import VisageWriter
 from .writers import SecondaryCaptureWriter, SRWriter
