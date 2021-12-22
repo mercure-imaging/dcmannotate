@@ -4,3 +4,4 @@
 *.dcm.xml
 *.dcmdump
 *.dump
+venv/

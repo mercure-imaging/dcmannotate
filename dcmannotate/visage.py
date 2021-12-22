@@ -36,7 +36,6 @@ class VisageWriter():
         )
         env.globals['generate_uid'] = generate_uid
         self.template = env.get_template("base.xml")
-        self.key_views = env.get_template("key_views.xml")
 
     def decode(self, t):
         return zlib.decompress(t[4:]).decode('utf-8')
