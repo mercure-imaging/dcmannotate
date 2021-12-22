@@ -8,6 +8,10 @@ DCMAnnotate is an experimental python library for generating simple annotations 
 - DICOM Secondary Capture ("burned in" annotations)
 - Visage 7 PR
 
+<p align="center">
+  <img src="https://github.com/mercure-imaging/dcmannotate/blob/assets/example_sc.png" width="350" title="hover text">
+</p>
+
 ## Supported annotations
 - Elliptical ROI
 - Point measurement
