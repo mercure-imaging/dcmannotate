@@ -9,7 +9,9 @@ DCMAnnotate is an experimental python library for generating simple annotations 
 - Visage 7 PR
 
 <p align="center">
-  <img src="https://github.com/mercure-imaging/dcmannotate/blob/assets/example_sc.png" width="350" title="hover text">
+  <img src="https://github.com/mercure-imaging/dcmannotate/blob/assets/example_sr.png" height="250" title="hover text">
+  <img src="https://github.com/mercure-imaging/dcmannotate/blob/assets/example_sc.png" height="250" title="hover text">
+  <img src="https://github.com/mercure-imaging/dcmannotate/blob/assets/example_pr.png" height="250" title="hover text">
 </p>
 
 ## Supported annotations
