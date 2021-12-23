@@ -9,6 +9,15 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dynamic = ["version", "description"]
+dependencies = [
+    "highdicom==0.12.1",
+    "Jinja2~=3.0.3",
+    "MarkupSafe~=2.0.1",
+    "numpy~=1.19.5",
+    "Pillow~=8.4.0",
+    "pydicom==2.2.2"
+]
 
 [project.urls]
 Home = "https://github.com/mercure-imaging/dcmannotate"
+
