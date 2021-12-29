@@ -2,17 +2,19 @@
 
 import datetime
 from pathlib import Path
-import os
+from typing import Any, List, Union
 import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
 import sys
-import numpy as np
+import numpy as np  # type: ignore
 import random
 import string
+from pydicom.uid import UID
+
 # File meta info data elements
 
 
-def mandelbrot(m=512, n=256):
+def mandelbrot(m: int = 512, n: int = 256) -> Any:
     x = np.linspace(-2, 1, num=m).reshape((1, m))
     y = np.linspace(-1, 1, num=n).reshape((n, 1))
     C = np.tile(x, (n, 1)) + 1j * np.tile(y, (1, m))
@@ -25,7 +27,7 @@ def mandelbrot(m=512, n=256):
     return M.astype(np.uint8)
 
 
-def julia(arg, m=256, n=512):
+def julia(arg: complex, m: int = 256, n: int = 512) -> Any:
     x = np.linspace(-1, 1, num=m).reshape((1, m))
     y = np.linspace(-2, 2, num=n).reshape((n, 1))
     C = np.tile(x, (n, 1)) + 1j * np.tile(y, (1, m))
@@ -43,58 +45,69 @@ def julia(arg, m=256, n=512):
     return K
 
 
-def nums(n):
-    return ''.join(random.choice(string.digits) for i in range(n))
+def nums(n: int) -> str:
+    return "".join(random.choice(string.digits) for i in range(n))
 
 
 dt = datetime.datetime.now()
 
 
-def generate_file(study, series, slice_number, acc, studyid, desc, image, orientation=[[1, 0, 0], [0, 1, 0]]):
+def generate_file(
+    study: str,
+    series: str,
+    slice_number: int,
+    acc: str,
+    studyid: str,
+    desc: str,
+    image: Any,
+    orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
+) -> Dataset:
     normal_vec = np.cross(orientation[0], orientation[1])
 
     file_meta = FileMetaDataset()
     file_meta.FileMetaInformationGroupLength = 200
-    file_meta.FileMetaInformationVersion = b'\x00\x01'
-    file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.4'
+    file_meta.FileMetaInformationVersion = b"\x00\x01"
+    file_meta.MediaStorageSOPClassUID = UID("1.2.840.10008.5.1.4.1.1.4")
 
     file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid(
-        prefix='1.2.276.0.7230010.3.1.4.')
-    file_meta.TransferSyntaxUID = '1.2.840.10008.1.2.1'
-    file_meta.ImplementationClassUID = '1.2.276.0.7230010.3.0.3.6.2'
-    file_meta.ImplementationVersionName = 'OFFIS_DCMTK_362'
+        prefix="1.2.276.0.7230010.3.1.4."
+    )
+    file_meta.TransferSyntaxUID = UID("1.2.840.10008.1.2.1")
+    file_meta.ImplementationClassUID = UID("1.2.276.0.7230010.3.0.3.6.2")
+    file_meta.ImplementationVersionName = "OFFIS_DCMTK_362"
 
     # Main data elements
     ds = Dataset()
-    ds.preamble = 128*b'\0'
-    ds.SOPClassUID = '1.2.840.10008.5.1.4.1.1.4'
+    ds.preamble = 128 * b"\0"
+    ds.SOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
     ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
     # pydicom.uid.generate_uid(
     #    prefix='1.2.276.0.7230010.3.1.4.')
-    ds.StudyDate = dt.strftime('%Y%m%d')
-    ds.StudyTime = dt.strftime('%H%M')
+    ds.StudyDate = dt.strftime("%Y%m%d")
+    ds.StudyTime = dt.strftime("%H%M")
     ds.AccessionNumber = acc
-    ds.Modality = 'MR'
-    ds.PatientName = 'Julia^Set'
-    ds.PatientID = 'JULIATEST'
-    ds.PatientBirthDate = '19700101'
-    ds.PatientSex = 'O'
+    ds.Modality = "MR"
+    ds.PatientName = "Julia^Set"
+    ds.PatientID = "JULIATEST"
+    ds.PatientBirthDate = "19700101"
+    ds.PatientSex = "O"
     ds.StudyInstanceUID = study
     ds.SeriesInstanceUID = series
     ds.FrameOfReferenceUID = series
     ds.SeriesDescription = desc
     # ds.SeriesNumber = 1
-    ds.InstanceNumber = str(slice_number+1)
+    ds.InstanceNumber = str(slice_number + 1)
     ds.StudyID = studyid
-    ds.ImageComments = 'NOT FOR DIAGNOSTIC USE'
-    ds.PatientPosition = 'HFS'
+    ds.ImageComments = "NOT FOR DIAGNOSTIC USE"
+    ds.PatientPosition = "HFS"
     ds.ImageOrientationPatient = [*orientation[0], *orientation[1]]
     ds.SpacingBetweenSlices = 7.5
-    ds.ImagePositionPatient = list([0, 0, 0] +
-                                   normal_vec*ds.SpacingBetweenSlices*slice_number)
-    ds.SliceLocation = 7.5*slice_number+170
+    ds.ImagePositionPatient = list(
+        [0, 0, 0] + normal_vec * ds.SpacingBetweenSlices * slice_number
+    )
+    ds.SliceLocation = 7.5 * slice_number + 170
     ds.SamplesPerPixel = 1
-    ds.PhotometricInterpretation = 'MONOCHROME2\0'
+    ds.PhotometricInterpretation = "MONOCHROME2\0"
     ds.SliceThickness = 5
     ds.PixelData = image.tobytes()
     ds.NumberOfFrames = "1"
@@ -112,29 +125,32 @@ def generate_file(study, series, slice_number, acc, studyid, desc, image, orient
     return ds
 
 
-def generate_test_series(pt=-.3-0.j, n=10, orientation=[[1, 0, 0], [0, 1, 0]]):
-    study = pydicom.uid.generate_uid(
-        prefix='1.2.276.0.7230010.3.1.2.')
-    series = pydicom.uid.generate_uid(
-        prefix='1.2.276.0.7230010.3.1.3.')
+def generate_test_series(
+    pt: complex = -0.3 - 0.0j,
+    n: int = 10,
+    orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
+) -> List[Dataset]:
+    # study = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.2.")
+    series = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.3.")
     acc = nums(7)
     study = nums(8)
     datasets = []
 
-    description = f'Julia set around {pt}'
+    description = f"Julia set around {pt}"
     for i in range(n):
-        pt_at = pt+.1j*(i-n/2)
+        pt_at = pt + 0.1j * (i - n / 2)
         array = julia(pt_at)
         # print(array)
-        datasets.append(generate_file(study, series, i, acc,
-                        study, description, array, orientation))
+        datasets.append(
+            generate_file(study, series, i, acc, study, description, array, orientation)
+        )
     return datasets
 
 
-def generate_series(f, n):
-    f = Path(f)
+def generate_series(k: Union[str, Path], n: int) -> None:
+    f: Path = Path(k)
     f.mkdir(parents=True, exist_ok=True)
-    datasets = generate_test_series(.3-0.j, n)
+    datasets = generate_test_series(0.3 - 0.0j, n)
     for i, d in enumerate(datasets):
         d.save_as(f / f"slice.{i}.dcm")
 

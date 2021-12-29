@@ -5,3 +5,5 @@
 *.dcmdump
 *.dump
 venv/
+.mypy_cache/
+dist/

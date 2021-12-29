@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# type: ignore
+
 import os
 import zlib
 from pydicom import dcmread
@@ -7,7 +9,7 @@ import sys
 
 
 def decode(t):
-    return zlib.decompress(t[4:]).decode('utf-8')
+    return zlib.decompress(t[4:]).decode("utf-8")
 
 
 ds = dcmread(sys.argv[1])

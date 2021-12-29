@@ -1,232 +1,68 @@
-import numpy as np
-from pathlib import Path
-from collections import namedtuple
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    KeysView,
+    List,
+    Optional,
+    Union,
+    ValuesView,
+)
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
 
-# from .writers import SRWriter, SecondaryCaptureWriter
-from . import writers
-from .visage import VisageWriter
-
-Point = namedtuple("Point", ["x", "y"])
-
-
-class DicomVolume:
-    def __init__(self, datasets, annotations=None, read_pixels=True):
-        self.load(datasets, read_pixels)
-        self.annotation_set = annotations
-
-    def annotate_with(self, annotation_set):
-        self.annotation_set = annotation_set
-
-    def load(self, param, read_pixels=True):
-        if type(param) is str:
-            param = Path(param)
-
-        if isinstance(param, Path) and param.is_dir():
-            files = param.iterdir()
-        elif isinstance(param, list) and isinstance(param[0], Dataset):
-            self.files = []
-            datasets = param
-        else:
-            # self.files = list(map(Path, param))
-            datasets = []
-            for path in param:
-                ds = dcmread(path, stop_before_pixels=(not read_pixels))
-                ds.from_path = Path(path)
-                datasets.append(ds)
-
-        self.verify(datasets)
-        self.__datasets = self.sort_by_z(datasets)
-
-    def write_sc(self, pattern):
-        sc_writer = writers.SecondaryCaptureWriter()
-        sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
-        DicomVolume(sc_result).save_as(pattern)
-
-    def write_sr(self, pattern=None):
-        sr_writer = writers.SRWriter()
-        sr_writer.generate_dicoms(self.annotation_set, pattern)
-
-    def write_visage(self, filepath):
-        visage_writer = VisageWriter()
-        visage_result = visage_writer.generate(self, self.annotation_set)
-        visage_result.save_as(filepath)
-
-    def save_as(self, pattern):
-        pattern = str(pattern)
-        if "*" not in pattern:
-            raise Exception("Pattern must include a '*' wildcard.")
-        for sc in self.__datasets:
-            sc.save_as(pattern.replace("*", f"{sc.z_index:03}"))
-
-    def sort_by_z(self, datasets):
-        """
-        Sort the dicoms along the orientation axis.
-        """
-        orientation = datasets[0].ImageOrientationPatient  # These will all be identical
-        # Doesn't matter which one you use, we are moving relative to it
-        start_position = np.asarray(datasets[0].ImagePositionPatient)
-
-        normal = np.cross(
-            orientation[0:3],  # A vector pointing along the ImageOrientation axis
-            orientation[3:6],
-        )
-
-        self.axis_x = orientation[0:3]
-        self.axis_y = orientation[3:6]
-        self.axis_z = normal
-
-        zs = {}
-        for ds in datasets:
-            if not zs:  # the z-value of the dicom at the start position will be zero
-                zs[ds.SOPInstanceUID] = 0
-            else:  # the z-value of every other dicom is relative to that
-                pos = np.asarray(ds.ImagePositionPatient)
-                # calculate the displacement along the normal (might be negative)
-                z = np.dot(pos - start_position, normal)
-                zs[ds.SOPInstanceUID] = z
-
-        # actually sort by the calculated z values
-        sorted_by_z = sorted(datasets, key=lambda x: zs[x.SOPInstanceUID])
-
-        z_spacing = np.abs(
-            np.linalg.norm(
-                np.asarray(sorted_by_z[1].ImagePositionPatient)
-                - np.asarray(sorted_by_z[0].ImagePositionPatient)
-            )
-        )
-
-        for k in range(len(sorted_by_z)):
-            sorted_by_z[k].z_index = k
-            sorted_by_z[k].z_spacing = z_spacing
-        return sorted_by_z
-
-    def verify(self, datasets):
-        def attr_same(l, attr):
-            return all(getattr(x, attr) == getattr(l[0], attr) for x in l)
-
-        tags_equal = [
-            "ImageOrientationPatient",
-            "SeriesInstanceUID",
-            "FrameOfReferenceUID",
-            "Rows",
-            "Columns",
-            "SpacingBetweenSlices",
-        ]
-        if not all(attr_same(datasets, attr) for attr in tags_equal):
-            raise Exception(
-                f"Not a volume: tags [{', '.join(tags_equal)}] must be present and identical"
-            )
-        for tag in tags_equal:
-            setattr(self, tag, getattr(datasets[0], tag))
-
-    def __getitem__(self, key):
-        return self.__datasets[key]
-
-    def __len__(self):
-        return self.__datasets.__len__()
-
-    def get(self, key):
-        return self.__datasets.get(key)
-
-    def __iter__(self):
-        return self.__datasets.__iter__()
-
-    def __next__(self):
-        return self.__datasets.__next__()
-
-    def __repr__(self) -> str:
-        return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}>"
-
-
-class AnnotationSet:
-    def __init__(self, annotation_sets):
-        self.__annotation_sets = {}
-        self.__list = annotation_sets
-        for set_ in annotation_sets:
-            self.__annotation_sets[set_.reference.SOPInstanceUID] = set_
-
-    def keys(self):
-        return self.__annotation_sets.keys()
-
-    def values(self):
-        return self.__annotation_sets.values()
-
-    def __iter__(self):
-        return self.__list.__iter__()
-
-    def __next__(self):
-        return self.__list.__next__()
-
-    def __getitem__(self, key):
-        return self.__annotation_sets[key]
-
-    def get(self, key, default=None):
-        return self.__annotation_sets.get(key, default)
-
-    def __repr__(self) -> str:
-        return self.__annotation_sets.__repr__()
-
-    def __contains__(self, k):
-        return self.__annotation_sets.__contains__(k)
+from .measurements import *
 
 
 class Annotations:
-    def __init__(self, annotation_list, reference_dataset):
-        self.ellipses = [k for k in annotation_list if isinstance(k, Ellipse)]
-        self.arrows = [k for k in annotation_list if isinstance(k, PointMeasurement)]
+    ellipses: List[Ellipse]
+    arrows: List[PointMeasurement]
+    reference: Dataset
+    SOPInstanceUID: str
+
+    def __init__(
+        self, measurements: List[Measurement], reference_dataset: Union[Dataset, str]
+    ):
+        self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
+        self.arrows = [k for k in measurements if isinstance(k, PointMeasurement)]
         if type(reference_dataset) is str:
             reference_dataset = dcmread(reference_dataset)
+        assert isinstance(reference_dataset, Dataset)
 
         self.reference = reference_dataset
         self.SOPInstanceUID = reference_dataset.SOPInstanceUID
 
 
-class Measurement:
-    def __init__(self, unit, value):
-        if type(unit) is str:
-            self.unit = getattr(codes.UCUM, unit)
-        else:
-            self.unit = unit
-        self.value = value
+class AnnotationSet:
+    def __init__(self, annotations_list: List[Annotations]):
+        self.__annotation_sets: Dict[Any, Annotations] = {}
+        self.__list = annotations_list
+        for set_ in annotations_list:
+            self.__annotation_sets[set_.reference.SOPInstanceUID] = set_
 
-    def from_dict(self, dict):
-        Measurement.__init__(self, dict["unit"], dict["value"])
+    def keys(self) -> KeysView[Any]:
+        return self.__annotation_sets.keys()
 
+    def values(self) -> ValuesView[Annotations]:
+        return self.__annotation_sets.values()
 
-class Ellipse(Measurement):
-    def __init__(self, c, rx, ry, unit, value):
-        super().__init__(unit, value)
-        self.center = c
-        self.rx = rx
-        self.ry = ry
-        self.top = Point(c.x, c.y - ry)
-        self.bottom = Point(c.x, c.y + ry)
-        self.left = Point(c.x - rx, c.y)
-        self.right = Point(c.x + rx, c.y)
-        self.topleft = Point(c.x - rx, c.y - ry)
-        self.bottomright = Point(c.x + rx, c.y + ry)
+    def __iter__(self) -> Iterator[Annotations]:
+        return self.__list.__iter__()
 
-    # @ classmethod
-    # def from_center(cls, c, r1, r2, unit, value):
-    #     return Ellipse(Point(c.x, c.y-r1), Point(c.x, c.y+r1), Point(c.x-r2, c.y), Point(c.x+r2, c.y), unit, value)
+    # def __next__(self):
+    #     return self.__list.__next__()
 
-    def __repr__(self):
-        return f"Ellipse<{self.top},{self.bottom},{self.left},{self.right}>({self.value} {self.unit.value})"
+    def __getitem__(self, key: Any) -> Annotations:
+        return self.__annotation_sets[key]
 
+    def get(
+        self, key: Any, default: Optional[Annotations] = None
+    ) -> Optional[Annotations]:
+        return self.__annotation_sets.get(key, default)
 
-class PointMeasurement(Measurement):
-    def __init__(self, x, y, unit, value):
-        super().__init__(unit, value)
-        self.x = x
-        self.y = y
+    def __repr__(self) -> str:
+        return self.__annotation_sets.__repr__()
 
-    def __add__(self, other):
-        return PointMeasurement(
-            self.x + other.x, self.y + other.y, self.unit, self.value
-        )
-
-    def __repr__(self):
-        return f"PointMeasurement<{self.x,self.y}>({self.value} {self.unit.value})"
+    def __contains__(self, k: Any) -> bool:
+        return self.__annotation_sets.__contains__(k)
