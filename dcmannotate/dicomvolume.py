@@ -18,6 +18,7 @@ from .measurements import *
 
 # from . import writers
 from .visage import VisageWriter
+import tempfile
 
 
 from typing import TYPE_CHECKING
@@ -76,16 +77,24 @@ class DicomVolume:
         self.verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
 
-    def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
+    def make_sc(self) -> "DicomVolume":
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
         sc_writer = SecondaryCaptureWriter()
         pydicom.config.INVALID_KEYWORD_BEHAVIOR = "IGNORE"
         try:
             sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
-            return DicomVolume(sc_result).save_as(pattern)
+            return DicomVolume(sc_result)
         finally:
             pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
+
+    def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
+        return self.make_sc().save_as(pattern)
+
+    def make_sr(self) -> List[Dataset]:
+        with tempfile.TemporaryDirectory() as dir:
+            files = self.write_sr(dir + "/" + "slice.*.dcm")
+            return [dcmread(f) for f in files]
 
     def write_sr(self, pattern: Optional[str] = None) -> List[Path]:
         if self.annotation_set is None:
@@ -94,12 +103,14 @@ class DicomVolume:
         sr_writer = SRWriter()
         return sr_writer.generate_dicoms(self.annotation_set, pattern)
 
-    def write_visage(self, filepath: Union[str, Path]) -> Path:
+    def make_visage(self) -> Dataset:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
         visage_writer = VisageWriter()
-        visage_result = visage_writer.generate(self, self.annotation_set)
-        visage_result.save_as(filepath)
+        return visage_writer.generate(self, self.annotation_set)
+
+    def write_visage(self, filepath: Union[str, Path]) -> Path:
+        self.make_visage().save_as(filepath)
         return Path(filepath)
 
     def save_as(self, pattern: Union[str, PathLike]) -> List[Path]:

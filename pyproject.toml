@@ -21,3 +21,7 @@ dependencies = [
 [project.urls]
 Home = "https://github.com/mercure-imaging/dcmannotate"
 
+[tool.flit.sdist]
+include = ["doc/"]
+exclude = ["doc/*.html"]
+

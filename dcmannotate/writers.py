@@ -58,7 +58,7 @@ class SRWriter:
                 frompath = annotations.reference.from_path
                 outfile = str(frompath.with_name(frompath.stem + "_sr.dcm"))
             else:
-                outfile = pattern.replace("*", annotations.reference.z_index)
+                outfile = pattern.replace("*", str(annotations.reference.z_index))
             p = run(["xml2dsr", "-", outfile], stdout=PIPE, input=xml, encoding="utf-8")
             outfiles.append(Path(outfile))
         return outfiles
