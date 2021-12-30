@@ -1,4 +1,5 @@
-import math, pathlib
+import math
+from pathlib import Path
 import numpy as np  # type: ignore
 from PIL import Image, ImageDraw, ImageFont  # type: ignore
 
@@ -25,7 +26,7 @@ class SRWriter:
     def __init__(self) -> None:
         env = Environment(
             loader=FileSystemLoader(
-                pathlib.Path(__file__).parent.resolve() / "templates" / "tid1500"
+                Path(__file__).parent.resolve() / "templates" / "tid1500"
             ),
             autoescape=True,
             undefined=StrictUndefined,
@@ -49,8 +50,9 @@ class SRWriter:
 
     def generate_dicoms(
         self, aset: "AnnotationSet", pattern: Optional[str] = None
-    ) -> None:
+    ) -> List[Path]:
         xml_docs = self.generate_xml(aset)
+        outfiles = []
         for annotations, xml in zip(aset, xml_docs):
             if pattern is None:
                 frompath = annotations.reference.from_path
@@ -58,6 +60,8 @@ class SRWriter:
             else:
                 outfile = pattern.replace("*", annotations.reference.z_index)
             p = run(["xml2dsr", "-", outfile], stdout=PIPE, input=xml, encoding="utf-8")
+            outfiles.append(Path(outfile))
+        return outfiles
 
     def generate_xml(self, aset: AnnotationSet) -> List[str]:
         return [self.generate_slice_xml(a, "") for a in aset]
@@ -92,7 +96,7 @@ class SecondaryCaptureWriter:
         yb = y1 - vec.y * 8
 
         # Draw the line without arrows
-        xy = ((ptA.x, ptA.y), (xb, yb))
+        xy = ((ptA.x, ptA.y), (x1 - vec.x * 2.0, y1 - vec.y * 2.0))
         draw.line(xy, width=width, fill=color)
 
         vtx0 = (xb + -vec.y * 8, yb + vec.x * 8)
@@ -101,7 +105,9 @@ class SecondaryCaptureWriter:
         # im.save('DEBUG-base.png')              # DEBUG: save
 
         # Now draw the arrowhead triangle
-        draw.polygon((vtx0, vtx1, (ptB.x, ptB.y)), fill=color)
+
+        draw.line(((ptB.x, ptB.y), vtx0), fill=color, width=2)
+        draw.line(((ptB.x, ptB.y), vtx1), fill=color, width=2)
 
     def sc_from_ref(self, reference_dataset: Dataset, pixel_array: Any) -> SCImage:
         sc = hd.sc.SCImage.from_ref_dataset(
@@ -196,6 +202,7 @@ class SecondaryCaptureWriter:
                 width=3,
             )
 
+        arrow_text_to_draw = []
         for arrow in arrows:
             text = f"{arrow.value} {arrow.unit.value}"
             text_size = draw_obj.textsize(" " + text + " ")
@@ -214,20 +221,51 @@ class SecondaryCaptureWriter:
             self.arrowedLine(
                 draw_obj, Point(start_point.x, start_point.y), arrow, width=2
             )
-
-        for arrow in arrows:
-            draw_obj.text(
-                xy=[start_point.x + text_offset[0], start_point.y + text_offset[1]],
-                text=text,
-                fill="cyan",
-                font=font,
+            arrow_text_to_draw.append(
+                ((start_point.x + text_offset[0], start_point.y + text_offset[1]), text)
             )
 
         for ellipse in ellipses:
+            text = f"{ellipse.value} {ellipse.unit.value}"
+            text_size = draw_obj.textsize(text)
+            text_loc = [int(ellipse.right.x) + 3, int(ellipse.top.y - text_size[1] / 2)]
+            flip_x = 1
+            flip_y = 1
+
+            if (text_loc[0] + text_size[0]) > pil_image.width:
+                text_loc[0] = int(ellipse.left.x) - text_size[0]
+                flip_x = -1
+
+            if (text_loc[1] - text_size[1]) < 0:
+                text_loc[1] = int(ellipse.bottom.y)
+                flip_y = -1
+
+            a = ellipse.rx
+            b = ellipse.ry
+            x = (math.sqrt(2) * a ** (1.5) * b ** (1.5) + a ** 3 - a ** 2 * b) / (
+                a ** 2 + b ** 2
+            )
+            y = b * math.sqrt(1 - x ** 2 / a ** 2)
+            draw_obj.line(
+                (
+                    (flip_x * x + ellipse.center.x, -flip_y * y + ellipse.center.y),
+                    int(ellipse.center.x + flip_x * ellipse.rx),
+                    int(ellipse.center.y - flip_y * ellipse.ry),
+                ),
+                width=2,
+                fill="red",
+            )
             draw_obj.text(
-                xy=[int(ellipse.right.x), int(ellipse.right.y)],
-                text=f"{ellipse.value} {ellipse.unit.value}",
-                fill="cyan",
+                xy=text_loc,
+                text=text,
+                fill="orange",
+                font=font,
+            )
+        for r in arrow_text_to_draw:
+            draw_obj.text(
+                xy=r[0],
+                text=r[1],
+                fill="orange",
                 font=font,
             )
 

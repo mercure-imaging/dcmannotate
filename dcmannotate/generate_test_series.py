@@ -91,13 +91,13 @@ def generate_file(
     ds.PatientID = "JULIATEST"
     ds.PatientBirthDate = "19700101"
     ds.PatientSex = "O"
-    ds.StudyInstanceUID = study
+    ds.StudyInstanceUID = studyid
     ds.SeriesInstanceUID = series
     ds.FrameOfReferenceUID = series
     ds.SeriesDescription = desc
     # ds.SeriesNumber = 1
     ds.InstanceNumber = str(slice_number + 1)
-    ds.StudyID = studyid
+    ds.StudyID = study
     ds.ImageComments = "NOT FOR DIAGNOSTIC USE"
     ds.PatientPosition = "HFS"
     ds.ImageOrientationPatient = [*orientation[0], *orientation[1]]
@@ -107,14 +107,14 @@ def generate_file(
     )
     ds.SliceLocation = 7.5 * slice_number + 170
     ds.SamplesPerPixel = 1
-    ds.PhotometricInterpretation = "MONOCHROME2\0"
+    ds.PhotometricInterpretation = "MONOCHROME2"
     ds.SliceThickness = 5
     ds.PixelData = image.tobytes()
     ds.NumberOfFrames = "1"
     ds.Rows = np.size(image, 0)
     ds.Columns = np.size(image, 1)
     ds.PixelSpacing = [2, 2]
-    ds.PixelAspectRatio = [1, 1]
+    # ds.PixelAspectRatio = [1, 1]
     ds.BitsAllocated = 16
     ds.BitsStored = 16
     ds.HighBit = 15
@@ -130,7 +130,7 @@ def generate_test_series(
     n: int = 10,
     orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
 ) -> List[Dataset]:
-    # study = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.2.")
+    study_uid = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.2.")
     series = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.3.")
     acc = nums(7)
     study = nums(8)
@@ -142,17 +142,23 @@ def generate_test_series(
         array = julia(pt_at)
         # print(array)
         datasets.append(
-            generate_file(study, series, i, acc, study, description, array, orientation)
+            generate_file(
+                study, series, i, acc, study_uid, description, array, orientation
+            )
         )
     return datasets
 
 
-def generate_series(k: Union[str, Path], n: int) -> None:
+def generate_series(k: Union[str, Path], n: int) -> List[Path]:
     f: Path = Path(k)
     f.mkdir(parents=True, exist_ok=True)
     datasets = generate_test_series(0.3 - 0.0j, n)
+    files = []
     for i, d in enumerate(datasets):
-        d.save_as(f / f"slice.{i}.dcm")
+        filename = f / f"slice.{i}.dcm"
+        d.save_as(filename)
+        files.append(filename)
+    return files
 
 
 if __name__ == "__main__":

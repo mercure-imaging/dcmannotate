@@ -9,6 +9,7 @@ from typing import (
 )
 import numpy as np  # type: ignore
 from pathlib import Path
+import pydicom
 from pydicom.dataset import Dataset
 from pydicom import dcmread
 
@@ -75,33 +76,42 @@ class DicomVolume:
         self.verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
 
-    def write_sc(self, pattern: Union[str, Path]) -> None:
+    def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
         sc_writer = SecondaryCaptureWriter()
-        sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
-        DicomVolume(sc_result).save_as(pattern)
+        pydicom.config.INVALID_KEYWORD_BEHAVIOR = "IGNORE"
+        try:
+            sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
+            return DicomVolume(sc_result).save_as(pattern)
+        finally:
+            pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
 
-    def write_sr(self, pattern: Optional[str] = None) -> None:
+    def write_sr(self, pattern: Optional[str] = None) -> List[Path]:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
         sr_writer = SRWriter()
-        sr_writer.generate_dicoms(self.annotation_set, pattern)
+        return sr_writer.generate_dicoms(self.annotation_set, pattern)
 
-    def write_visage(self, filepath: Union[str, Path]) -> None:
+    def write_visage(self, filepath: Union[str, Path]) -> Path:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
         visage_writer = VisageWriter()
         visage_result = visage_writer.generate(self, self.annotation_set)
         visage_result.save_as(filepath)
+        return Path(filepath)
 
-    def save_as(self, pattern: Union[str, PathLike]) -> None:
+    def save_as(self, pattern: Union[str, PathLike]) -> List[Path]:
         pattern = str(pattern)
         if "*" not in pattern:
             raise Exception("Pattern must include a '*' wildcard.")
+        files = []
         for sc in self.__datasets:
-            sc.save_as(pattern.replace("*", f"{sc.z_index:03}"))
+            filename = pattern.replace("*", f"{sc.z_index:03}")
+            sc.save_as(filename)
+            files.append(Path(filename))
+        return files
 
     def sort_by_z(self, datasets: List[Dataset]) -> List[Dataset]:
         """
