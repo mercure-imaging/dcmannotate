@@ -38,7 +38,17 @@ class AnnotationSet:
     def __init__(self, annotations_list: List[Annotations]):
         self.__annotation_sets: Dict[Any, Annotations] = {}
         self.__list = annotations_list
+        series_uid = annotations_list[0].reference.SeriesInstanceUID
         for set_ in annotations_list:
+            if set_.reference.SOPInstanceUID in self.__annotation_sets:
+                raise ValueError("Two Annotations must not reference the same dataset.")
+            if (
+                set_.reference.SeriesInstanceUID is None
+                or set_.reference.SeriesInstanceUID != series_uid
+            ):
+                raise ValueError(
+                    "All Annotations in an AnnotationSet must reference the same series."
+                )
             self.__annotation_sets[set_.reference.SOPInstanceUID] = set_
 
     def keys(self) -> KeysView[Any]:

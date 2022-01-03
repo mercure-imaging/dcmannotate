@@ -54,6 +54,11 @@ class DicomVolume:
         self.annotation_set = annotations
 
     def annotate_with(self, annotation_set: "AnnotationSet") -> None:
+        for a in annotation_set:
+            if a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
+                raise ValueError(
+                    "An Annotation does not reference this DicomVolume's SeriesInstanceUID."
+                )
         self.annotation_set = annotation_set
 
     def load(
