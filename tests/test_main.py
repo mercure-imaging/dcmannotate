@@ -37,7 +37,7 @@ def input_volume_annotated(input_volume):
         input_volume[1],
     )
 
-    input_volume.annotate_with(AnnotationSet([slice0_annotations, slice1_annotations]))
+    input_volume.annotate_with([slice0_annotations, slice1_annotations])
     return input_volume
 
 

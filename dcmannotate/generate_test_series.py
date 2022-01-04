@@ -149,10 +149,12 @@ def generate_test_series(
     return datasets
 
 
-def generate_series(k: Union[str, Path], n: int) -> List[Path]:
+def generate_series(
+    k: Union[str, Path], n: int, orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]]
+) -> List[Path]:
     f: Path = Path(k)
     f.mkdir(parents=True, exist_ok=True)
-    datasets = generate_test_series(0.3 - 0.0j, n)
+    datasets = generate_test_series(0.3 - 0.0j, n, orientation)
     files = []
     for i, d in enumerate(datasets):
         filename = f / f"slice.{i}.dcm"

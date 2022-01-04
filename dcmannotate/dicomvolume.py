@@ -53,7 +53,12 @@ class DicomVolume:
         self.load(datasets, read_pixels)
         self.annotation_set = annotations
 
-    def annotate_with(self, annotation_set: "AnnotationSet") -> None:
+    def annotate_with(
+        self, annotation_set: "Union[AnnotationSet,List[Annotations]]"
+    ) -> None:
+        if type(annotation_set) is list:
+            annotation_set = AnnotationSet(annotation_set)
+        assert type(annotation_set) is AnnotationSet
         for a in annotation_set:
             if a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
                 raise ValueError(
@@ -209,4 +214,4 @@ class DicomVolume:
         return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}>"
 
 
-from .annotations import AnnotationSet
+from .annotations import AnnotationSet, Annotations
