@@ -54,8 +54,14 @@ class DicomVolume:
         self.annotation_set = annotations
 
     def annotate_with(
-        self, annotation_set: "Union[AnnotationSet,List[Annotations]]"
+        self,
+        annotation_set: "Union[AnnotationSet,List[Annotations]]",
+        force: bool = False,
     ) -> None:
+        if self.annotation_set and not force:
+            raise ValueError(
+                "This DicomVolume already has annotations. You must pass 'force=True' to replace them."
+            )
         if type(annotation_set) is list:
             annotation_set = AnnotationSet(annotation_set)
         assert type(annotation_set) is AnnotationSet

@@ -184,3 +184,8 @@ def test_invalid_annotations(tmpdir, input_volume):
     ):
         aset = AnnotationSet([slice1_annotations])
         input_volume.annotate_with(aset)
+
+    with pytest.raises(ValueError, match=".*already has annotations.*"):
+        aset = AnnotationSet([slice0_annotations])
+        input_volume.annotate_with(aset)
+        input_volume.annotate_with(aset)
