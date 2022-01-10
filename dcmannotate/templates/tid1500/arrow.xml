@@ -29,6 +29,7 @@
         </concept>
         <value>{{ generate_uid('2.25.') }}</value>
     </uidref>
+    {% if arrow.unit is none and arrow.value is not none%}
     <code>
         <relationship>CONTAINS</relationship>
         <concept>
@@ -42,8 +43,9 @@
         <scheme>
             <designator>CST4</designator>
         </scheme>
-        <meaning>arrow2</meaning>
+        <meaning>{{ arrow.value }}</meaning>
     </code>
+    {% endif %}
     <num>
         <relationship>CONTAINS</relationship>
         <concept>
@@ -64,6 +66,7 @@
             </image>
             <data>{{ arrow.x }}/{{ arrow.y }}</data>
         </scoord>
+        {% if arrow.unit is not none %}
         <value>{{ arrow.value }}</value>
         <unit>
             <value>{{ arrow.unit.value }}</value>
@@ -73,5 +76,6 @@
             </scheme>
             <meaning>{{ arrow.unit.meaning }}</meaning>
         </unit>
+        {% endif %}
     </num>
 </container>

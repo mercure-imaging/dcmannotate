@@ -11,7 +11,7 @@
         <line_width>2</line_width>
         <font size="11" italics="0" bold="1">MS Shell Dlg 2</font>
     </style>
-    <label>{{ ellipse.value }} {{ ellipse.unit.value }}</label>
+    <label>{{ ellipse.value }}{% if ellipse.unit %} {{ ellipse.unit.value }}{% endif %}</label>
     <protected>0</protected>
     <creator>generated</creator>
     <scope>

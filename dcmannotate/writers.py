@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw, ImageFont  # type: ignore
 from subprocess import run, PIPE
 from typing import Any, List, Optional, Sequence
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+import pydicom
 
 from pydicom.dataset import Dataset
 from pydicom.uid import generate_uid
@@ -51,6 +52,12 @@ class SRWriter:
     def generate_dicoms(
         self, aset: "AnnotationSet", pattern: Optional[str] = None
     ) -> List[Path]:
+        for k in aset:
+            for measurement in k:
+                if type(measurement.value) not in (int, float) and measurement.unit:
+                    raise Exception(
+                        f'{measurement} on slice {k.reference.z_index} has non-numeric value "{measurement.value}".'
+                    )
         xml_docs = self.generate_xml(aset)
         outfiles = []
         for annotations, xml in zip(aset, xml_docs):
@@ -59,7 +66,31 @@ class SRWriter:
                 outfile = str(frompath.with_name(frompath.stem + "_sr.dcm"))
             else:
                 outfile = pattern.replace("*", str(annotations.reference.z_index))
-            p = run(["xml2dsr", "-", outfile], stdout=PIPE, input=xml, encoding="utf-8")
+            p = run(
+                ["xml2dsr", "-", outfile],
+                stdout=PIPE,
+                stderr=PIPE,
+                input=xml,
+                encoding="utf-8",
+            )
+            if p.returncode != 0:
+                raise Exception(p.stderr)
+
+            d = pydicom.dcmread(outfile)
+
+            for elem in d.iterall():
+                if elem.name == "Concept Code Sequence":
+                    try:
+                        long_code_value = elem[0].LongCodeValue
+                    except:
+                        continue
+                    if long_code_value == "CORNERSTONEFREETEXT":
+                        elem[0].add_new("CodeValue", "SH", "CORNERSTONEFREETEXT")
+                        del elem[0][0x00080119]
+                        # print(elem[0])
+
+            d.save_as(outfile)
+
             outfiles.append(Path(outfile))
         return outfiles
 
@@ -204,7 +235,9 @@ class SecondaryCaptureWriter:
 
         arrow_text_to_draw = []
         for arrow in arrows:
-            text = f"{arrow.value} {arrow.unit.value}"
+            text = f"{arrow.value}"
+            if arrow.unit:
+                text += f" {arrow.unit.value}"
             text_size = draw_obj.textsize(" " + text + " ")
             offset = Point(50, 50)
             start_point = arrow + offset
@@ -226,7 +259,9 @@ class SecondaryCaptureWriter:
             )
 
         for ellipse in ellipses:
-            text = f"{ellipse.value} {ellipse.unit.value}"
+            text = f"{ellipse.value}"
+            if ellipse.unit:
+                text += f" {ellipse.unit.value}"
             text_size = draw_obj.textsize(text)
             text_loc = [int(ellipse.right.x) + 3, int(ellipse.top.y - text_size[1] / 2)]
             flip_x = 1

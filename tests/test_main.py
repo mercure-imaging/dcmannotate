@@ -1,3 +1,7 @@
+from pathlib import Path
+from typing import Any, List
+
+from pydicom.dataset import Dataset
 from dcmannotate import (
     generate_test_series,
     DicomVolume,
@@ -11,29 +15,30 @@ import pytest
 
 
 @pytest.fixture(scope="module")
-def input_series(tmpdir_factory):
+def input_series(tmpdir_factory: Any) -> List[Path]:
     tmpdir = tmpdir_factory.mktemp("data")
     return generate_test_series.generate_series(tmpdir, 5, [[1, 0, 0], [0, 1, 0]])
 
 
 @pytest.fixture
-def input_volume(input_series):
+def input_volume(input_series: List[Path]) -> DicomVolume:
     return DicomVolume(input_series)
 
 
 @pytest.fixture
-def input_volume_annotated(input_volume):
-    a = Ellipse(Point(256, 256), 128, 128, "Millimeter", 1)
+def input_volume_annotated(input_volume: DicomVolume) -> DicomVolume:
+    a = Ellipse(Point(256, 256), 128, 128, None, "Finding 1")
     b = PointMeasurement(256, 256, "Millimeter", 200)
+    c = PointMeasurement(256, 256, None, "Finding 2")
     slice0_annotations = Annotations(
-        [a, b],
+        [a, b, c],
         input_volume[0],
     )
 
-    c = Ellipse(Point(2, 2), 128, 128, "Millimeter", 1)
-    d = PointMeasurement(1, 1, "Millimeter", 200)
+    e = Ellipse(Point(2, 2), 128, 128, "Millimeter", 1)
+    f = PointMeasurement(1, 1, "Millimeter", 200)
     slice1_annotations = Annotations(
-        [c, d],
+        [e, f],
         input_volume[1],
     )
 
@@ -41,13 +46,13 @@ def input_volume_annotated(input_volume):
     return input_volume
 
 
-def test_create_volume(input_series):
+def test_create_volume(input_series: List[Path]) -> None:
     print(input_series)
     volume = DicomVolume(input_series)
     assert len(volume) == 5
 
 
-def test_create_annotation(input_volume):
+def test_create_annotation(input_volume: DicomVolume) -> None:
     assert input_volume.annotation_set is None
     a = Ellipse(Point(256, 256), 128, 128, "Millimeter", 1)
     b = PointMeasurement(256, 256, "Millimeter", 200)
@@ -71,7 +76,7 @@ def test_create_annotation(input_volume):
     assert input_volume.annotation_set == aset
 
 
-def verify_measurement(meas, uid, meas_obj):
+def verify_measurement(meas: Dataset, uid: Any, meas_obj: Any) -> None:
     assert meas.ConceptNameCodeSequence[0].CodeMeaning == "Measurement Group"
     for k in meas.ContentSequence:
         if k.ValueType == "NUM":
@@ -86,7 +91,17 @@ def verify_measurement(meas, uid, meas_obj):
         .ReferencedSOPInstanceUID
         == uid
     )
-    assert measurement.MeasuredValueSequence[0].NumericValue == meas_obj.value
+    if meas_obj.unit is not None:
+        assert measurement.MeasuredValueSequence[0].NumericValue == meas_obj.value
+    else:  # no unit, look for a free text value
+        for k in meas.ContentSequence:
+            if k.ValueType == "CODE":
+                el = k
+                break
+        else:
+            raise Exception("Expected a free text annotation value")
+        assert el.ConceptCodeSequence[0].CodeMeaning == meas_obj.value
+
     assert measurement_seq0.GraphicType in ("POINT", "ELLIPSE")
     if measurement_seq0.GraphicType == "POINT":
         assert measurement_seq0.GraphicData == [meas_obj.x, meas_obj.y]
@@ -104,8 +119,9 @@ def verify_measurement(meas, uid, meas_obj):
         ]
 
 
-def test_make_sr(input_volume_annotated):
+def test_make_sr(input_volume_annotated: DicomVolume) -> None:
     srs = input_volume_annotated.make_sr()
+    assert input_volume_annotated.annotation_set is not None
     assert len(srs) == 2
     sr = srs[0]
     assert len(sr.ContentSequence) == 5
@@ -133,34 +149,43 @@ def test_make_sr(input_volume_annotated):
         raise Exception()
 
     measurement_groups = image_measurements.ContentSequence
-
-    slice0_annotations = input_volume_annotated.annotation_set[
-        input_volume_annotated[0].SOPInstanceUID
-    ]
+    slice0_uid = input_volume_annotated[0].SOPInstanceUID
+    slice0_annotations = input_volume_annotated.annotation_set[slice0_uid]
     verify_measurement(
         measurement_groups[0],
-        input_volume_annotated[0].SOPInstanceUID,
+        slice0_uid,
         slice0_annotations.arrows[0],
     )
     verify_measurement(
         measurement_groups[1],
-        input_volume_annotated[0].SOPInstanceUID,
+        slice0_uid,
+        slice0_annotations.arrows[1],
+    )
+    verify_measurement(
+        measurement_groups[2],
+        slice0_uid,
         slice0_annotations.ellipses[0],
     )
 
 
-def test_make_sc(input_volume_annotated):
+def test_make_sc(input_volume_annotated: DicomVolume) -> None:
     sc = input_volume_annotated.make_sc()
     assert len(sc) == 5
 
 
-def test_make_visage(input_volume_annotated):
+def test_make_visage(input_volume_annotated: DicomVolume) -> None:
     visage = input_volume_annotated.make_visage()
 
 
-def test_invalid_annotations(tmpdir, input_volume):
+def test_invalid_annotations(tmpdir: str, input_volume: DicomVolume) -> None:
     a = Ellipse(Point(256, 256), 128, 128, "Millimeter", 1)
     b = PointMeasurement(256, 256, "Millimeter", 200)
+
+    with pytest.raises(
+        TypeError, match="Measurements with units must have a numeric value."
+    ):
+        Ellipse(Point(256, 256), 128, 128, "Millimeter", "Finding")
+
     slice0_annotations = Annotations(
         [a, b],
         input_volume[0],

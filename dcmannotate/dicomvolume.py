@@ -211,7 +211,7 @@ class DicomVolume:
     #     return self.__datasets.get(key)
 
     def __iter__(self) -> Iterator[Dataset]:
-        return self.__datasets.__iter__()
+        yield from self.__datasets
 
     # def __next__(self):
     #     return self.__datasets.__next__()

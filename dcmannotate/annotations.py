@@ -13,6 +13,7 @@ from pydicom.sr.codedict import codes
 from pydicom import dcmread
 
 from .measurements import *
+from itertools import chain
 
 
 class Annotations:
@@ -32,6 +33,10 @@ class Annotations:
 
         self.reference = reference_dataset
         self.SOPInstanceUID = reference_dataset.SOPInstanceUID
+
+    def __iter__(self) -> Iterator[Measurement]:
+        yield from self.ellipses
+        yield from self.arrows
 
 
 class AnnotationSet:
@@ -58,7 +63,7 @@ class AnnotationSet:
         return self.__annotation_sets.values()
 
     def __iter__(self) -> Iterator[Annotations]:
-        return self.__list.__iter__()
+        yield from self.__list
 
     # def __next__(self):
     #     return self.__list.__next__()

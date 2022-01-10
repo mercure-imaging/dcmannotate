@@ -29,6 +29,23 @@
         </concept>
         <value>{{ generate_uid('2.25.') }}</value>
     </uidref>
+    {% if ellipse.unit is none and ellipse.value is not none %}
+    <code>
+        <relationship>CONTAINS</relationship>
+        <concept>
+            <value>121071</value>
+            <scheme>
+                <designator>DCM</designator>
+            </scheme>
+            <meaning>Finding</meaning>
+        </concept>
+        <value>CORNERSTONEFREETEXT</value>
+        <scheme>
+            <designator>CST4</designator>
+        </scheme>
+        <meaning>{{ ellipse.value }}</meaning>
+    </code>
+    {% endif %}
     <num>
         <relationship>CONTAINS</relationship>
         <concept>
@@ -54,6 +71,7 @@
             {{ ellipse.right.x }}/{{ ellipse.right.y }}
             </data>
         </scoord>
+        {% if ellipse.unit is not none %}
         <value>{{ ellipse.value}}</value>
         <unit>
             <value>{{ ellipse.unit.value }}</value>
@@ -63,5 +81,6 @@
             </scheme>
             <meaning>{{ ellipse.unit.meaning }}</meaning>
         </unit>
+        {% endif %}
     </num>
 </container>

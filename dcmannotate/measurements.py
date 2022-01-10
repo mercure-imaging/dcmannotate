@@ -6,12 +6,15 @@ from collections import namedtuple
 from pydicom.sr.codedict import codes
 from typing import (
     Any,
+    Optional,
     Union,
 )
 
 
 class Measurement:
-    def __init__(self, unit: str, value: Any) -> None:
+    def __init__(self, unit: Optional[str], value: Union[str, int, float]) -> None:
+        if type(value) is str and unit is not None:
+            raise TypeError("Measurements with units must have a numeric value.")
         if type(unit) is str:
             self.unit = getattr(codes.UCUM, unit)
         else:
@@ -23,7 +26,14 @@ class Measurement:
 
 
 class Ellipse(Measurement):
-    def __init__(self, c: Point, rx: int, ry: int, unit: str, value: Any):
+    def __init__(
+        self,
+        c: Point,
+        rx: int,
+        ry: int,
+        unit: Optional[str],
+        value: Union[str, int, float],
+    ):
         super().__init__(unit, value)
         self.center = c
         self.rx = rx
@@ -36,11 +46,13 @@ class Ellipse(Measurement):
         self.bottomright = Point(c.x + rx, c.y + ry)
 
     def __repr__(self) -> str:
-        return f"Ellipse<{self.top},{self.bottom},{self.left},{self.right}>({self.value} {self.unit.value})"
+        return f"Ellipse<{self.top},{self.bottom},{self.left},{self.right}>({self.value} {self.unit.value if self.unit else ''})"
 
 
 class PointMeasurement(Measurement):
-    def __init__(self, x: int, y: int, unit: str, value: Any):
+    def __init__(
+        self, x: int, y: int, unit: Optional[str], value: Union[str, int, float]
+    ):
         super().__init__(unit, value)
         self.x = x
         self.y = y
@@ -51,4 +63,4 @@ class PointMeasurement(Measurement):
         )
 
     def __repr__(self) -> str:
-        return f"PointMeasurement<{self.x,self.y}>({self.value} {self.unit.value})"
+        return f"PointMeasurement<{self.x,self.y}>({self.value}{' '+self.unit.value if self.unit else ''})"

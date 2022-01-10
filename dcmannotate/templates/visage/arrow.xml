@@ -11,7 +11,7 @@
         <line_width>2</line_width>
         <font size="11" italics="0" bold="1">MS Shell Dlg 2</font>
     </style>
-    <label>{{ arrow.value }} {{ arrow.unit.value }} </label>
+    <label>{{ arrow.value }}{% if arrow.unit %} {{ arrow.unit.value }}{%endif%}</label>
     <protected>0</protected>
     <creator>wiggir01</creator>
     <scope>
