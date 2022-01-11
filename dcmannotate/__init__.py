@@ -11,6 +11,7 @@ from .measurements import (
 from .dicomvolume import DicomVolume
 from .visage import VisageWriter
 from .writers import SecondaryCaptureWriter, SRWriter
+from .readers import SRReader, VisageReader
 
 __all__ = [
     "Annotations",
@@ -23,4 +24,6 @@ __all__ = [
     "VisageWriter",
     "SecondaryCaptureWriter",
     "SRWriter",
+    "SRReader",
+    "VisageReader",
 ]

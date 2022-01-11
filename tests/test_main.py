@@ -11,12 +11,13 @@ from dcmannotate import (
     PointMeasurement,
     Annotations,
     AnnotationSet,
+    SRReader,
 )
 import pytest
 
 from pydicom.sr.codedict import _CodesDict, codes
 
-from dcmannotate.readers import SRReader
+from dcmannotate.readers import VisageReader
 
 
 @pytest.fixture(scope="module")
@@ -192,6 +193,13 @@ def test_make_sc(input_volume_annotated: DicomVolume) -> None:
 
 def test_make_visage(input_volume_annotated: DicomVolume) -> None:
     visage = input_volume_annotated.make_visage()
+
+
+def test_roundtrip_visage(input_volume_annotated: DicomVolume) -> None:
+    srs = input_volume_annotated.make_visage()
+    r = VisageReader()
+    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    assert input_volume_annotated.annotation_set == read_annotations
 
 
 def test_invalid_annotations(tmpdir: str, input_volume: DicomVolume) -> None:

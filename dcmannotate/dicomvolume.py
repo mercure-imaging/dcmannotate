@@ -217,7 +217,7 @@ class DicomVolume:
     #     return self.__datasets.__next__()
 
     def __repr__(self) -> str:
-        return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}>"
+        return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}{', annotated' if self.annotation_set else ''}>"
 
 
 from .annotations import AnnotationSet, Annotations

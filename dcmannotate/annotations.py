@@ -61,6 +61,15 @@ class Annotations:
                 return False
         return True
 
+    def __repr__(self) -> str:
+        return (
+            "<"
+            + self.SOPInstanceUID
+            + ": "
+            + [self.ellipses + self.arrows].__repr__() # type: ignore
+            + ">"
+        )
+
 
 class AnnotationSet:
     def __init__(self, annotations_list: List[Annotations]):
@@ -82,7 +91,6 @@ class AnnotationSet:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AnnotationSet):
             raise NotImplementedError
-
         return self.__list == other.__list
 
     def keys(self) -> KeysView[Any]:
