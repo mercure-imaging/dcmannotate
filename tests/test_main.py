@@ -1,7 +1,8 @@
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, cast
 
 from pydicom.dataset import Dataset
+from pydicom.sr.coding import Code
 from dcmannotate import (
     generate_test_series,
     DicomVolume,
@@ -12,6 +13,10 @@ from dcmannotate import (
     AnnotationSet,
 )
 import pytest
+
+from pydicom.sr.codedict import _CodesDict, codes
+
+from dcmannotate.readers import SRReader
 
 
 @pytest.fixture(scope="module")
@@ -77,7 +82,8 @@ def test_create_annotation(input_volume: DicomVolume) -> None:
 
 
 def verify_measurement(meas: Dataset, uid: Any, meas_obj: Any) -> None:
-    assert meas.ConceptNameCodeSequence[0].CodeMeaning == "Measurement Group"
+    assert type(codes.DCM) is _CodesDict
+    assert meas.ConceptNameCodeSequence[0].CodeValue == codes.DCM.MeasurementGroup.value
     for k in meas.ContentSequence:
         if k.ValueType == "NUM":
             measurement = k
@@ -120,6 +126,7 @@ def verify_measurement(meas: Dataset, uid: Any, meas_obj: Any) -> None:
 
 
 def test_make_sr(input_volume_annotated: DicomVolume) -> None:
+    assert type(codes.DCM) is _CodesDict
     srs = input_volume_annotated.make_sr()
     assert input_volume_annotated.annotation_set is not None
     assert len(srs) == 2
@@ -127,7 +134,7 @@ def test_make_sr(input_volume_annotated: DicomVolume) -> None:
     assert len(sr.ContentSequence) == 5
 
     for k in sr.ContentSequence:
-        if k.ConceptNameCodeSequence[0].CodeMeaning == "Image Library":
+        if k.ConceptNameCodeSequence[0].CodeValue == codes.DCM.ImageLibrary.value:
             image_library = k
             break
     else:
@@ -142,7 +149,10 @@ def test_make_sr(input_volume_annotated: DicomVolume) -> None:
     )
 
     for k in sr.ContentSequence:
-        if k.ConceptNameCodeSequence[0].CodeMeaning == "Imaging Measurements":
+        if (
+            k.ConceptNameCodeSequence[0].CodeValue
+            == cast(Code, codes.DCM.ImagingMeasurements).value
+        ):
             image_measurements = k
             break
     else:
@@ -166,6 +176,13 @@ def test_make_sr(input_volume_annotated: DicomVolume) -> None:
         slice0_uid,
         slice0_annotations.ellipses[0],
     )
+
+
+def test_roundtrip_sr(input_volume_annotated: DicomVolume) -> None:
+    srs = input_volume_annotated.make_sr()
+    r = SRReader()
+    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    assert input_volume_annotated.annotation_set == read_annotations
 
 
 def test_make_sc(input_volume_annotated: DicomVolume) -> None:

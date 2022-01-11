@@ -1,3 +1,4 @@
+from os import PathLike
 from typing import (
     Any,
     Dict,
@@ -27,7 +28,7 @@ class Annotations:
     ):
         self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
         self.arrows = [k for k in measurements if isinstance(k, PointMeasurement)]
-        if type(reference_dataset) is str:
+        if isinstance(reference_dataset, (str, PathLike)):
             reference_dataset = dcmread(reference_dataset)
         assert isinstance(reference_dataset, Dataset)
 
@@ -38,6 +39,28 @@ class Annotations:
         yield from self.ellipses
         yield from self.arrows
 
+    def __contains__(self, measurement: Measurement) -> bool:
+        return measurement in self.ellipses or measurement in self.arrows
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Annotations):
+            raise NotImplementedError
+
+        if (
+            self.reference != other.reference
+            or self.SOPInstanceUID != other.SOPInstanceUID
+        ):
+            return False
+
+        for m in self:
+            if m not in other:
+                return False
+
+        for m in other:
+            if m not in self:
+                return False
+        return True
+
 
 class AnnotationSet:
     def __init__(self, annotations_list: List[Annotations]):
@@ -45,7 +68,7 @@ class AnnotationSet:
         self.__list = annotations_list
         series_uid = annotations_list[0].reference.SeriesInstanceUID
         for set_ in annotations_list:
-            if set_.reference.SOPInstanceUID in self.__annotation_sets:
+            if set_.SOPInstanceUID in self.__annotation_sets:
                 raise ValueError("Two Annotations must not reference the same dataset.")
             if (
                 set_.reference.SeriesInstanceUID is None
@@ -54,7 +77,13 @@ class AnnotationSet:
                 raise ValueError(
                     "All Annotations in an AnnotationSet must reference the same series."
                 )
-            self.__annotation_sets[set_.reference.SOPInstanceUID] = set_
+            self.__annotation_sets[set_.SOPInstanceUID] = set_
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AnnotationSet):
+            raise NotImplementedError
+
+        return self.__list == other.__list
 
     def keys(self) -> KeysView[Any]:
         return self.__annotation_sets.keys()

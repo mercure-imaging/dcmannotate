@@ -21,12 +21,12 @@ volume = DicomVolume(in_files)
 print(volume)
 a_slice_1 = Annotations(
     [
-        Ellipse(Point(128, 256), 72, 128, "SquareMillimeter", 1),
-        Ellipse(Point(128, 256), 48, 48, "SquareMillimeter", 2),
-        Ellipse(Point(48, 256), 48, 48, "SquareMillimeter", 3),
+        Ellipse(Point(128, 256), 72, 128, None, "Finding A"),
+        Ellipse(Point(128, 256), 48, 48, "Millimeter", 2),
+        Ellipse(Point(48, 256), 48, 48, "Millimeter", 3),
         # Ellipse(Point(192, 256), 64, 64, "SquareMillimeter", 4),
         PointMeasurement(128, 170, "Millimeter", 100),
-        PointMeasurement(220, 320, "Millimeter", 200),
+        PointMeasurement(220, 320, None, "Finding B"),
     ],
     volume[0],
 )
