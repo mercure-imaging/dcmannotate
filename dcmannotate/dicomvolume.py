@@ -1,3 +1,4 @@
+from .annotations import AnnotationSet, Annotations
 from typing import (
     Any,
     Dict,
@@ -66,7 +67,7 @@ class DicomVolume:
             annotation_set = AnnotationSet(annotation_set)
         assert type(annotation_set) is AnnotationSet
         for a in annotation_set:
-            if a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
+            if a.reference and a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
                 raise ValueError(
                     "An Annotation does not reference this DicomVolume's SeriesInstanceUID."
                 )
@@ -149,7 +150,8 @@ class DicomVolume:
         start_position = np.asarray(datasets[0].ImagePositionPatient)
 
         normal = np.cross(
-            orientation[0:3],  # A vector pointing along the ImageOrientation axis
+            # A vector pointing along the ImageOrientation axis
+            orientation[0:3],
             orientation[3:6],
         )
 
@@ -218,6 +220,3 @@ class DicomVolume:
 
     def __repr__(self) -> str:
         return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}{', annotated' if self.annotation_set else ''}>"
-
-
-from .annotations import AnnotationSet, Annotations

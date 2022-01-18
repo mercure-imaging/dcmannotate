@@ -1,3 +1,4 @@
+from multiprocessing.sharedctypes import Value
 from os import PathLike
 from typing import (
     Any,
@@ -9,6 +10,7 @@ from typing import (
     Union,
     ValuesView,
 )
+from typing import Sequence as SequenceType
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 from pydicom import dcmread
@@ -24,16 +26,20 @@ class Annotations:
     SOPInstanceUID: str
 
     def __init__(
-        self, measurements: List[Measurement], reference_dataset: Union[Dataset, str]
+        self,
+        measurements: SequenceType[Measurement],
+        reference_dataset: Union[Dataset, str],
     ):
         self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
-        self.arrows = [k for k in measurements if isinstance(k, PointMeasurement)]
+        self.arrows = [
+            k for k in measurements if isinstance(k, PointMeasurement)]
+
         if isinstance(reference_dataset, (str, PathLike)):
             reference_dataset = dcmread(reference_dataset)
-        assert isinstance(reference_dataset, Dataset)
 
-        self.reference = reference_dataset
+        assert isinstance(reference_dataset, Dataset)
         self.SOPInstanceUID = reference_dataset.SOPInstanceUID
+        self.reference = reference_dataset
 
     def __iter__(self) -> Iterator[Measurement]:
         yield from self.ellipses
@@ -66,9 +72,29 @@ class Annotations:
             "<"
             + self.SOPInstanceUID
             + ": "
-            + [self.ellipses + self.arrows].__repr__() # type: ignore
+            + (self.ellipses + self.arrows).__repr__()  # type: ignore
             + ">"
         )
+
+    def __json_serializable__(self) -> Dict[str, Any]:
+        return {
+            "arrows": self.arrows,
+            "ellipses": self.ellipses,
+            "reference_sop_uid": self.SOPInstanceUID,
+        }
+
+
+class AnnotationsParsed:
+    def __init__(
+        self,
+        measurements: List[Measurement],
+        reference_sop_uid: str,
+    ):
+        self.measurements = measurements
+        self.SOPInstanceUID = reference_sop_uid
+
+    def with_reference(self, reference: Dataset) -> Annotations:
+        return Annotations(self.measurements, reference)
 
 
 class AnnotationSet:
@@ -77,8 +103,12 @@ class AnnotationSet:
         self.__list = annotations_list
         series_uid = annotations_list[0].reference.SeriesInstanceUID
         for set_ in annotations_list:
+            if set_.reference is None:
+                raise ValueError(
+                    "all Annotations in an AnnotationSet must have a reference dataset")
             if set_.SOPInstanceUID in self.__annotation_sets:
-                raise ValueError("Two Annotations must not reference the same dataset.")
+                raise ValueError(
+                    "Two Annotations must not reference the same dataset.")
             if (
                 set_.reference.SeriesInstanceUID is None
                 or set_.reference.SeriesInstanceUID != series_uid
@@ -118,3 +148,6 @@ class AnnotationSet:
 
     def __contains__(self, k: Any) -> bool:
         return self.__annotation_sets.__contains__(k)
+
+    def __json_serializable__(self) -> List[Annotations]:
+        return self.__list

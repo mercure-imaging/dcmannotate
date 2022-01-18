@@ -17,7 +17,7 @@ import pytest
 
 from pydicom.sr.codedict import _CodesDict, codes
 
-from dcmannotate.readers import VisageReader
+from dcmannotate.readers import SCReader, VisageReader
 
 
 @pytest.fixture(scope="module")
@@ -186,9 +186,22 @@ def test_roundtrip_sr(input_volume_annotated: DicomVolume) -> None:
     assert input_volume_annotated.annotation_set == read_annotations
 
 
-def test_make_sc(input_volume_annotated: DicomVolume) -> None:
-    sc = input_volume_annotated.make_sc()
-    assert len(sc) == 5
+def test_roundtrip_sc(input_volume_annotated: DicomVolume) -> None:
+    srs = input_volume_annotated.make_sc()
+    r = SCReader()
+    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    assert input_volume_annotated.annotation_set == read_annotations
+
+# def test_make_sc(input_volume_annotated: DicomVolume) -> None:
+#     sc = input_volume_annotated.make_sc()
+#     assert len(sc) == 5
+#     r = SCReader()
+#     for k in sc:
+#         try:
+#             m = r.get_measurements(k)
+#             print(m)
+#         except KeyError:
+#             pass
 
 
 def test_make_visage(input_volume_annotated: DicomVolume) -> None:
@@ -217,7 +230,8 @@ def test_invalid_annotations(tmpdir: str, input_volume: DicomVolume) -> None:
     )
 
     other_volume = DicomVolume(
-        generate_test_series.generate_series(tmpdir, 5, [[1, 0, 0], [0, -1, 0]])
+        generate_test_series.generate_series(
+            tmpdir, 5, [[1, 0, 0], [0, -1, 0]])
     )
     slice1_annotations = Annotations(
         [a, b],

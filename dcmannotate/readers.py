@@ -1,3 +1,5 @@
+from json import JSONDecodeError
+from multiprocessing.sharedctypes import Value
 from os import PathLike
 from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
 import zlib
@@ -7,10 +9,11 @@ from pydicom.sr.codedict import _CodesDict, codes
 from dcmannotate import PointMeasurement, Ellipse, Point
 from pydicom.sr.coding import Code
 from pathlib import Path
-from dcmannotate.annotations import AnnotationSet, Annotations
+from dcmannotate.annotations import AnnotationSet, Annotations, AnnotationsParsed
 from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.measurements import Measurement
-from defusedxml.ElementTree import fromstring as xml_from_string # type: ignore
+from dcmannotate.serialization import AnnotationDecoder
+from defusedxml.ElementTree import fromstring as xml_from_string  # type: ignore
 
 
 def find_value_type(ds: Dataset, type: str) -> Dataset:
@@ -58,8 +61,9 @@ class VisageReader:
         }
         for measurement in xml_data:
             meas_type = measurement.tag
-            origin = measurement.find("./coordinate_system/origin").text.split(" ")
-            x,y = map(int, origin[0:2])
+            origin = measurement.find(
+                "./coordinate_system/origin").text.split(" ")
+            x, y = map(int, origin[0:2])
             z = float(origin[2])
             z_idx = int(z - 0.5)
             label = measurement.find("./label").text
@@ -176,6 +180,57 @@ class SRReader:
             else:
                 raise Exception(
                     "ReferencedSOPInstanceUID for this SR does not exist in volume."
+                )
+        return AnnotationSet(annotations)
+
+
+class SCReader:
+    def get_measurements(self, dataset: Union[Dataset, str, Path]) -> Optional[AnnotationsParsed]:
+        ds: Dataset
+        if isinstance(dataset, (str, PathLike)):
+            ds = pydicom.dcmread(dataset)
+        else:
+            ds = dataset
+
+        try:
+            block = ds.private_block(0x0091, "dcmannotate")
+        except KeyError as e:
+            raise KeyError(
+                "Private creator 'dcmannotate' not found. This may not be a file created by dcmannotate.")
+        version = block[0x00].value
+        if version != 1:
+            raise ValueError(
+                f"Unknown annotation serialization version {version}")
+
+        return self.parse_json(block[0x01].value)
+
+    def parse_json(self, json: str) -> Optional[AnnotationsParsed]:
+        d = AnnotationDecoder()
+        result = d.decode(json)
+        if not isinstance(result, AnnotationsParsed):
+            if result in ("", {}, None):
+                return None
+            else:
+                raise Exception(
+                    f"Unexpected annotation data: {json}")
+        return result
+
+    def read_annotations(self,
+                         volume: DicomVolume,
+                         sc_files: Union[DicomVolume, Sequence[Union[Dataset, str, Path]]]) -> AnnotationSet:
+        annotations = []
+        for f in sc_files:
+            measurements = self.get_measurements(f)
+            if measurements is None:
+                continue
+            for s in volume:
+                if s.SOPInstanceUID == measurements.SOPInstanceUID:
+                    # measurements.reference = s
+                    annotations.append(measurements.with_reference(s))
+                    break
+            else:
+                raise Exception(
+                    "ReferencedSOPInstanceUID for this SC does not exist in volume."
                 )
         return AnnotationSet(annotations)
 

@@ -16,11 +16,13 @@ from highdicom.sc.sop import SCImage
 
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:  # avoid circular import
     from .dicomvolume import DicomVolume
 
 from .measurements import PointMeasurement, Point
 from .annotations import Annotations, AnnotationSet
+from .serialization import AnnotationEncoder
 
 
 class SRWriter:
@@ -65,7 +67,8 @@ class SRWriter:
                 frompath = annotations.reference.from_path
                 outfile = str(frompath.with_name(frompath.stem + "_sr.dcm"))
             else:
-                outfile = pattern.replace("*", str(annotations.reference.z_index))
+                outfile = pattern.replace(
+                    "*", str(annotations.reference.z_index))
             p = run(
                 ["xml2dsr", "-", outfile],
                 stdout=PIPE,
@@ -85,7 +88,8 @@ class SRWriter:
                     except:
                         continue
                     if long_code_value == "CORNERSTONEFREETEXT":
-                        elem[0].add_new("CodeValue", "SH", "CORNERSTONEFREETEXT")
+                        elem[0].add_new("CodeValue", "SH",
+                                        "CORNERSTONEFREETEXT")
                         del elem[0][0x00080119]
                         # print(elem[0])
 
@@ -182,10 +186,24 @@ class SecondaryCaptureWriter:
         uid = hd.UID()
         for slice in volume:
             sc = None
+            pixels = None
+            annotations = None
             if slice.SOPInstanceUID in annotation_set:
-                sc = self.generate_slice(annotation_set[slice.SOPInstanceUID], window)
+                annotations = annotation_set[slice.SOPInstanceUID]
+                pixels = self.generate_pixels(
+                    annotations, window)
             else:
-                sc = self.sc_from_ref(slice, self.window_image(slice, window))
+                pixels = self.window_image(slice, window)
+
+            sc = self.sc_from_ref(slice, pixels)
+
+            block = sc.private_block(0x0091, "dcmannotate", create=True)
+            k = AnnotationEncoder()
+            block.add_new(0, "UL", 1)
+            if annotations:
+                block.add_new(1, "LT", k.encode(annotations))
+            else:
+                block.add_new(1, "LT", "{}")
             sc.SeriesInstanceUID = uid
             scs.append(sc)
         return scs
@@ -208,7 +226,7 @@ class SecondaryCaptureWriter:
         # Create RGB channels
         return np.tile(windowed_image[:, :, np.newaxis], [1, 1, 3])
 
-    def generate_slice(self, annotations: Annotations, window: List[int]) -> SCImage:
+    def generate_pixels(self, annotations: Annotations, window: List[int]) -> Any:
         reference_dataset, ellipses, arrows = (
             annotations.reference,
             annotations.ellipses,
@@ -249,13 +267,15 @@ class SecondaryCaptureWriter:
                 text_offset[1] = -11
 
             if start_point.x + text_size[0] > pil_image.width:
-                text_offset[0] = pil_image.width - (start_point.x + text_size[0])
+                text_offset[0] = pil_image.width - \
+                    (start_point.x + text_size[0])
 
             self.arrowedLine(
                 draw_obj, Point(start_point.x, start_point.y), arrow, width=2
             )
             arrow_text_to_draw.append(
-                ((start_point.x + text_offset[0], start_point.y + text_offset[1]), text)
+                ((start_point.x + text_offset[0],
+                 start_point.y + text_offset[1]), text)
             )
 
         for ellipse in ellipses:
@@ -263,7 +283,8 @@ class SecondaryCaptureWriter:
             if ellipse.unit:
                 text += f" {ellipse.unit.value}"
             text_size = draw_obj.textsize(text)
-            text_loc = [int(ellipse.right.x) + 3, int(ellipse.top.y - text_size[1] / 2)]
+            text_loc = [int(ellipse.right.x) + 3,
+                        int(ellipse.top.y - text_size[1] / 2)]
             flip_x = 1
             flip_y = 1
 
@@ -305,16 +326,4 @@ class SecondaryCaptureWriter:
             )
 
             # Convert to numpy array
-        pixel_array = np.array(pil_image)
-
-        # The patient orientation defines the directions of the rows and columns of the
-        # image, relative to the anatomy of the patient.  In a standard CT axial image,
-        # the rows are oriented leftwards and the columns are oriented posteriorly, so
-        # the patient orientation is ['L', 'P']
-        patient_orientation = ["L", "P"]
-
-        # Create the secondary capture image. By using the `from_ref_dataset`
-        # constructor, all the patient and study information willl be copied from the
-        # original image dataset
-        sc_image = self.sc_from_ref(reference_dataset, pixel_array)
-        return sc_image
+        return np.array(pil_image)

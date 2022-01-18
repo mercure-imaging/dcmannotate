@@ -1,26 +1,27 @@
+from typing import (
+    Any,
+    Dict,
+    Optional,
+    Union,
+)
+from pydicom.sr.codedict import codes
 from collections import namedtuple
 
 from pydicom.sr.coding import Code
 
 Point = namedtuple("Point", ["x", "y"])
 
-from collections import namedtuple
-from pydicom.sr.codedict import codes
-from typing import (
-    Any,
-    Optional,
-    Union,
-)
-
 
 class Measurement:
     unit: Optional[Code]
+    value: Union[str, int, float]
 
     def __init__(
         self, unit: Optional[Union[str, Code]], value: Union[str, int, float]
     ) -> None:
         if type(value) is str and unit is not None:
-            raise TypeError("Measurements with units must have a numeric value.")
+            raise TypeError(
+                "Measurements with units must have a numeric value.")
 
         if unit:
             if isinstance(unit, Code):
@@ -35,6 +36,9 @@ class Measurement:
 
     # def from_dict(self, dict) -> Measurement:
     #     Measurement.__init__(self, dict["unit"], dict["value"])
+
+    def __json_serializable__(self) -> Dict[str, Union[Optional[str], int, float]]:
+        return dict(value=self.value, unit=self.unit.value if self.unit else None)
 
 
 class Ellipse(Measurement):
@@ -73,6 +77,12 @@ class Ellipse(Measurement):
             and self.value == other.value
         )
 
+    def __json_serializable__(self) -> Dict[str, Any]:
+        return {
+            **super().__json_serializable__(),
+            **dict(center=self.center, rx=self.rx, ry=self.ry),
+        }
+
 
 class PointMeasurement(Measurement):
     def __init__(
@@ -109,3 +119,6 @@ class PointMeasurement(Measurement):
 
     def __repr__(self) -> str:
         return f"PointMeasurement<{self.x,self.y}>({self.value}{' '+self.unit.value if self.unit else ''})"
+
+    def __json_serializable__(self) -> Dict[str, Any]:
+        return {**super().__json_serializable__(), **dict(x=self.x, y=self.y)}
