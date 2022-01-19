@@ -10,14 +10,14 @@ from dcmannotate import (
     Point,
     PointMeasurement,
     Annotations,
-    AnnotationSet,
-    SRReader,
+    AnnotationSet
 )
 import pytest
 
 from pydicom.sr.codedict import _CodesDict, codes
 
-from dcmannotate.readers import SCReader, VisageReader
+from dcmannotate import readers
+from dcmannotate.serialization import AnnotationEncoder
 
 
 @pytest.fixture(scope="module")
@@ -32,7 +32,7 @@ def input_volume(input_series: List[Path]) -> DicomVolume:
 
 
 @pytest.fixture
-def input_volume_annotated(input_volume: DicomVolume) -> DicomVolume:
+def input_annotation_set(input_volume: DicomVolume) -> AnnotationSet:
     a = Ellipse(Point(256, 256), 128, 128, None, "Finding 1")
     b = PointMeasurement(256, 256, "Millimeter", 200)
     c = PointMeasurement(256, 256, None, "Finding 2")
@@ -47,8 +47,12 @@ def input_volume_annotated(input_volume: DicomVolume) -> DicomVolume:
         [e, f],
         input_volume[1],
     )
+    return AnnotationSet([slice0_annotations, slice1_annotations])
 
-    input_volume.annotate_with([slice0_annotations, slice1_annotations])
+
+@pytest.fixture
+def input_volume_annotated(input_volume: DicomVolume, input_annotation_set: AnnotationSet) -> DicomVolume:
+    input_volume.annotate_with(input_annotation_set)
     return input_volume
 
 
@@ -181,16 +185,21 @@ def test_make_sr(input_volume_annotated: DicomVolume) -> None:
 
 def test_roundtrip_sr(input_volume_annotated: DicomVolume) -> None:
     srs = input_volume_annotated.make_sr()
-    r = SRReader()
-    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    read_annotations = readers.sr.read_annotations(input_volume_annotated, srs)
     assert input_volume_annotated.annotation_set == read_annotations
 
 
 def test_roundtrip_sc(input_volume_annotated: DicomVolume) -> None:
     srs = input_volume_annotated.make_sc()
-    r = SCReader()
-    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    read_annotations = readers.sc.read_annotations(input_volume_annotated, srs)
     assert input_volume_annotated.annotation_set == read_annotations
+
+
+def test_from_json(input_volume: DicomVolume, input_annotation_set: AnnotationSet) -> None:
+    k = AnnotationEncoder()
+    json = k.encode(input_annotation_set)
+    annotation_set = readers.sc.read_annotations_from_json(input_volume, json)
+    assert annotation_set == input_annotation_set
 
 # def test_make_sc(input_volume_annotated: DicomVolume) -> None:
 #     sc = input_volume_annotated.make_sc()
@@ -210,8 +219,8 @@ def test_make_visage(input_volume_annotated: DicomVolume) -> None:
 
 def test_roundtrip_visage(input_volume_annotated: DicomVolume) -> None:
     srs = input_volume_annotated.make_visage()
-    r = VisageReader()
-    read_annotations = r.read_annotations(input_volume_annotated, srs)
+    read_annotations = readers.visage.read_annotations(
+        input_volume_annotated, srs)
     assert input_volume_annotated.annotation_set == read_annotations
 
 
