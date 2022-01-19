@@ -8,6 +8,14 @@ from dcmannotate.annotations import AnnotationSet, AnnotationSetParsed, Annotati
 from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.serialization import AnnotationDecoder
 
+pydicom.datadict.add_private_dict_entries(
+    "dcmannotate",
+    {
+        0x00911000: ("UL", "1", "AnnotationDataVersion", "Annotation data version"),
+        0x00911001: ("LT", "1", "AnnotationData", "Annotation data"),
+    },
+)
+
 
 def get_measurements(dataset: Union[Dataset, str, Path]) -> Optional[AnnotationsParsed]:
     ds: Dataset

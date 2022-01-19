@@ -55,7 +55,7 @@ def read(args: Any) -> None:
     except KeyError as e:
         pass
     if format is None:
-        if datasets[0].SOPClassUID == "EnhancedSRStorage" and datasets[0].CodingSchemeIdentificationSequence[0].CodingSchemeDesignator == "99dcmjs":
+        if datasets[0].SOPClassUID == "1.2.840.10008.5.1.4.1.1.88.22" and datasets[0].CodingSchemeIdentificationSequence[0].CodingSchemeDesignator == "99dcmjs":
             format = "sr"
         elif datasets[0].Manufacturer == "Visage PR":
             format = "visage"

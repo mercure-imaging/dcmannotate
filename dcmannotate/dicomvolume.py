@@ -14,7 +14,7 @@ import pydicom
 from pydicom.dataset import Dataset
 from pydicom import dcmread
 
-from .writers import SRWriter, SecondaryCaptureWriter
+from . import writers
 from .measurements import *
 
 # from . import writers
@@ -97,10 +97,9 @@ class DicomVolume:
     def make_sc(self) -> "DicomVolume":
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
-        sc_writer = SecondaryCaptureWriter()
         pydicom.config.INVALID_KEYWORD_BEHAVIOR = "IGNORE"
         try:
-            sc_result = sc_writer.generate(self, self.annotation_set, [0, 1])
+            sc_result = writers.sc.generate(self, self.annotation_set, [0, 1])
             return DicomVolume(sc_result)
         finally:
             pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
@@ -117,14 +116,13 @@ class DicomVolume:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
-        sr_writer = SRWriter()
-        return sr_writer.generate_dicoms(self.annotation_set, pattern)
+        return writers.sr.generate_dicoms(self.annotation_set, pattern)
 
     def make_visage(self) -> Dataset:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
-        visage_writer = VisageWriter()
-        return visage_writer.generate(self, self.annotation_set)
+
+        return writers.visage.generate(self, self.annotation_set)
 
     def write_visage(self, filepath: Union[str, Path]) -> Path:
         self.make_visage().save_as(filepath)
