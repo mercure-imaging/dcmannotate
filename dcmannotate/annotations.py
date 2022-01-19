@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 class Annotations:
+    """Annotations for a slice.
+    """
     ellipses: List[Ellipse]
     arrows: List[PointMeasurement]
     reference: Dataset
@@ -86,6 +88,9 @@ class Annotations:
 
 
 class AnnotationsParsed(Annotations):
+    """Represents annotations for a slice as parsed. Unlike Annotations objects, it has no `reference` member.
+    """
+
     def __init__(
         self,
         measurements: List[Measurement],
@@ -98,19 +103,30 @@ class AnnotationsParsed(Annotations):
         self.SOPInstanceUID = reference_sop_uid
 
     def with_reference(self, reference: Dataset) -> Annotations:
+        """Return a real Annotations object with the reference dataset filled in.
+
+        Args:
+            reference (Dataset): The dataset representing the referenced slice.
+
+        Returns:
+            Annotations: The resulting Annotations object.
+        """
         return Annotations(self.measurements, reference)
 
 
 class AnnotationSet:
+    """All the annotations for a particular volume, organized by slice. 
+    """
+
     def __init__(self, annotations_list: List[Annotations]):
-        self.__annotation_sets: Dict[Any, Annotations] = {}
+        self.__annotations: Dict[Any, Annotations] = {}
         self.__list = annotations_list
         series_uid = annotations_list[0].reference.SeriesInstanceUID
         for set_ in annotations_list:
             if set_.reference is None:
                 raise ValueError(
                     "all Annotations in an AnnotationSet must have a reference dataset")
-            if set_.SOPInstanceUID in self.__annotation_sets:
+            if set_.SOPInstanceUID in self.__annotations:
                 raise ValueError(
                     "Two Annotations must not reference the same dataset.")
             if (
@@ -120,7 +136,7 @@ class AnnotationSet:
                 raise ValueError(
                     "All Annotations in an AnnotationSet must reference the same series."
                 )
-            self.__annotation_sets[set_.SOPInstanceUID] = set_
+            self.__annotations[set_.SOPInstanceUID] = set_
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, AnnotationSet):
@@ -128,10 +144,10 @@ class AnnotationSet:
         return self.__list == other.__list
 
     def keys(self) -> KeysView[Any]:
-        return self.__annotation_sets.keys()
+        return self.__annotations.keys()
 
     def values(self) -> ValuesView[Annotations]:
-        return self.__annotation_sets.values()
+        return self.__annotations.values()
 
     def __iter__(self) -> Iterator[Annotations]:
         yield from self.__list
@@ -140,18 +156,18 @@ class AnnotationSet:
     #     return self.__list.__next__()
 
     def __getitem__(self, key: Any) -> Annotations:
-        return self.__annotation_sets[key]
+        return self.__annotations[key]
 
     def get(
         self, key: Any, default: Optional[Annotations] = None
     ) -> Optional[Annotations]:
-        return self.__annotation_sets.get(key, default)
+        return self.__annotations.get(key, default)
 
     def __repr__(self) -> str:
-        return self.__annotation_sets.__repr__()
+        return self.__annotations.__repr__()
 
     def __contains__(self, k: Any) -> bool:
-        return self.__annotation_sets.__contains__(k)
+        return self.__annotations.__contains__(k)
 
     def __json_serializable__(self) -> List[Annotations]:
         return self.__list

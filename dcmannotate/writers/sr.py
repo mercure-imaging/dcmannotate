@@ -1,7 +1,7 @@
 import math
 from pathlib import Path
 from subprocess import run, PIPE
-from typing import Any, List, Optional, Sequence
+from typing import List, Optional
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 import pydicom
 

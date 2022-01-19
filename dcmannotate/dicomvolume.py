@@ -17,8 +17,6 @@ from pydicom import dcmread
 from . import writers
 from .measurements import *
 
-# from . import writers
-from .visage import VisageWriter
 import tempfile
 
 
@@ -59,6 +57,12 @@ class DicomVolume:
         annotation_set: "Union[AnnotationSet,List[Annotations]]",
         force: bool = False,
     ) -> None:
+        """Annotate this dicom volume.
+
+        Args:
+            annotation_set (Union[AnnotationSet,List[Annotations]]): Supply a list of Annotations, or an instance of AnnotationSet
+            force (bool, optional): Replace existing annotations, if any. Defaults to False.
+        """
         if self.annotation_set and not force:
             raise ValueError(
                 "This DicomVolume already has annotations. You must pass 'force=True' to replace them."
@@ -95,6 +99,11 @@ class DicomVolume:
         self.__datasets = self.sort_by_z(datasets)
 
     def make_sc(self) -> "DicomVolume":
+        """Generate a set of Secondary Capture images as a DicomVolume. 
+
+        Returns:
+            DicomVolume: A DicomVolume with the resulting SC images as slices. 
+        """
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
         pydicom.config.INVALID_KEYWORD_BEHAVIOR = "IGNORE"
@@ -105,6 +114,15 @@ class DicomVolume:
             pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
 
     def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
+        """Write out Dicom Secondary Capture files.
+
+        Args:
+            pattern (string): Pattern for output file names, eg "./out/slice_sr.*.dcm".
+
+        Returns:
+            List[Path]: A list of the created files.
+        """
+
         return self.make_sc().save_as(pattern)
 
     def make_sr(self) -> List[Dataset]:
@@ -113,6 +131,17 @@ class DicomVolume:
             return [dcmread(f) for f in files]
 
     def write_sr(self, pattern: Optional[str] = None) -> List[Path]:
+        """Write out Dicom Structured Reports.
+
+        Args:
+            pattern (string, optional): Pattern for output file names, eg "./out/slice_sr.*.dcm". If None, uses input filenames as basis. Defaults to None.
+
+        Raises:
+            Exception: This volume must be annotated.
+
+        Returns:
+            List[Path]: A list of the created files.
+        """
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
@@ -125,10 +154,26 @@ class DicomVolume:
         return writers.visage.generate(self, self.annotation_set)
 
     def write_visage(self, filepath: Union[str, Path]) -> Path:
+        """Write out Visage PR file.
+
+        Args:
+            filepath (string): Output file names, eg "./out/visage.dcm"
+
+        Returns:
+            Path: The created file.
+        """
         self.make_visage().save_as(filepath)
         return Path(filepath)
 
     def save_as(self, pattern: Union[str, PathLike]) -> List[Path]:
+        """Write out this volume to files, slice by slice. 
+
+        Args:
+            pattern (str, Path): Pattern to use when writing files, eg "./out/slice_*.dcm"
+
+        Returns:
+            List[Path]: The created files.
+        """
         pattern = str(pattern)
         if "*" not in pattern:
             raise Exception("Pattern must include a '*' wildcard.")
@@ -141,7 +186,7 @@ class DicomVolume:
 
     def sort_by_z(self, datasets: List[Dataset]) -> List[Dataset]:
         """
-        Sort the dicoms along the orientation axis.
+            Sort the given datasets along the orientation axis.
         """
         orientation = datasets[0].ImageOrientationPatient  # These will all be identical
         # Doesn't matter which one you use, we are moving relative to it
@@ -207,14 +252,8 @@ class DicomVolume:
     def __len__(self) -> int:
         return self.__datasets.__len__()
 
-    # def get(self, key) -> Dataset:
-    #     return self.__datasets.get(key)
-
     def __iter__(self) -> Iterator[Dataset]:
         yield from self.__datasets
-
-    # def __next__(self):
-    #     return self.__datasets.__next__()
 
     def __repr__(self) -> str:
         return f"<Volume {self.Rows}x{self.Columns}x{len(self)} -> {self.axis_z}{', annotated' if self.annotation_set else ''}>"

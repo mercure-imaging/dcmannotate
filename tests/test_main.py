@@ -17,6 +17,7 @@ import pytest
 from pydicom.sr.codedict import _CodesDict, codes
 
 from dcmannotate import readers
+from dcmannotate import serialization
 from dcmannotate.serialization import AnnotationEncoder
 
 
@@ -198,23 +199,9 @@ def test_roundtrip_sc(input_volume_annotated: DicomVolume) -> None:
 def test_from_json(input_volume: DicomVolume, input_annotation_set: AnnotationSet) -> None:
     k = AnnotationEncoder()
     json = k.encode(input_annotation_set)
-    annotation_set = readers.sc.read_annotations_from_json(input_volume, json)
+    annotation_set = serialization.read_annotations_from_json(
+        input_volume, json)
     assert annotation_set == input_annotation_set
-
-# def test_make_sc(input_volume_annotated: DicomVolume) -> None:
-#     sc = input_volume_annotated.make_sc()
-#     assert len(sc) == 5
-#     r = SCReader()
-#     for k in sc:
-#         try:
-#             m = r.get_measurements(k)
-#             print(m)
-#         except KeyError:
-#             pass
-
-
-def test_make_visage(input_volume_annotated: DicomVolume) -> None:
-    visage = input_volume_annotated.make_visage()
 
 
 def test_roundtrip_visage(input_volume_annotated: DicomVolume) -> None:

@@ -2,6 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 from typing import Any, List, Union
+from dcmannotate import serialization
 
 from dcmannotate.annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
 from dcmannotate.serialization import AnnotationEncoder
@@ -19,7 +20,8 @@ def write(args: Any) -> None:
         annotations = "\n".join(sys.stdin.readlines())
     else:
         annotations = args.annotations
-    annotation_set = readers.sc.read_annotations_from_json(volume, annotations)
+    annotation_set = serialization.read_annotations_from_json(
+        volume, annotations)
     volume.annotate_with(annotation_set)
 
     if args.format == "sc":

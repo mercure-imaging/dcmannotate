@@ -1,5 +1,4 @@
 import math
-from pathlib import Path
 import numpy as np  # type: ignore
 from PIL import Image, ImageDraw, ImageFont  # type: ignore
 from typing import Any, List,  Sequence

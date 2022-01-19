@@ -1,7 +1,12 @@
 from json import JSONEncoder, JSONDecoder
 from typing import Any, List, Union, Dict
 from .measurements import Measurement, PointMeasurement, Ellipse, Point
-from .annotations import AnnotationSet, AnnotationsParsed
+from .annotations import AnnotationSet, AnnotationsParsed, AnnotationSetParsed
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .dicomvolume import DicomVolume
 
 
 class AnnotationEncoder(JSONEncoder):
@@ -37,3 +42,13 @@ class AnnotationDecoder(JSONDecoder):
             return AnnotationsParsed(measurements,  dct["reference_sop_uid"])
         # and isinstance(dct[0], AnnotationsParsed):
         return dct
+
+
+def read_annotations_from_json(volume: "DicomVolume", json: str) -> AnnotationSet:
+    d = AnnotationDecoder()
+    result = d.decode(json)
+    if not isinstance(result, list) or not isinstance(result[0], AnnotationsParsed):
+        raise Exception(
+            f"Unexpected annotation data: {json}")
+
+    return AnnotationSetParsed(result).with_reference(volume)

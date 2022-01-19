@@ -49,16 +49,6 @@ def parse_annotations(json: str) -> Optional[AnnotationsParsed]:
     return result
 
 
-def read_annotations_from_json(volume: DicomVolume, json: str) -> AnnotationSet:
-    d = AnnotationDecoder()
-    result = d.decode(json)
-    if not isinstance(result, list) or not isinstance(result[0], AnnotationsParsed):
-        raise Exception(
-            f"Unexpected annotation data: {json}")
-
-    return AnnotationSetParsed(result).with_reference(volume)
-
-
 def read_annotations(volume: DicomVolume,
                      sc_files: Union[DicomVolume, Sequence[Union[Dataset, str, Path]]]) -> AnnotationSet:
     annotations = []
