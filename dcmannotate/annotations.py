@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 from os import PathLike
 from typing import (
     Any,
@@ -12,11 +11,13 @@ from typing import (
 )
 from typing import Sequence as SequenceType
 from pydicom.dataset import Dataset
-from pydicom.sr.codedict import codes
 from pydicom import dcmread
 
 from .measurements import *
-from itertools import chain
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .dicomvolume import DicomVolume
 
 
 class Annotations:
@@ -84,13 +85,16 @@ class Annotations:
         }
 
 
-class AnnotationsParsed:
+class AnnotationsParsed(Annotations):
     def __init__(
         self,
         measurements: List[Measurement],
         reference_sop_uid: str,
     ):
         self.measurements = measurements
+        self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
+        self.arrows = [
+            k for k in measurements if isinstance(k, PointMeasurement)]
         self.SOPInstanceUID = reference_sop_uid
 
     def with_reference(self, reference: Dataset) -> Annotations:
@@ -151,3 +155,23 @@ class AnnotationSet:
 
     def __json_serializable__(self) -> List[Annotations]:
         return self.__list
+
+
+class AnnotationSetParsed:
+    def __init__(self, annotations_list: List[AnnotationsParsed]):
+        self.__list = annotations_list
+
+    def with_reference(self, volume: "DicomVolume") -> "AnnotationSet":
+        annotations: List[Annotations] = []
+        for a in self.__list:
+            for s in volume:
+                if s.SOPInstanceUID == a.SOPInstanceUID:
+                    # measurements.reference = s
+                    annotations.append(a.with_reference(s))
+                    break
+            else:
+                raise Exception(
+                    "ReferencedSOPInstanceUID for this SC does not exist in volume."
+                )
+
+        return AnnotationSet(annotations)

@@ -35,6 +35,5 @@ class AnnotationDecoder(JSONDecoder):
             measurements: List[Measurement]
             measurements = arrows + ellipses   # type: ignore
             return AnnotationsParsed(measurements,  dct["reference_sop_uid"])
-        if isinstance(dct, list) and isinstance(dct[0], Measurement):
-            return dct
+        # and isinstance(dct[0], AnnotationsParsed):
         return dct

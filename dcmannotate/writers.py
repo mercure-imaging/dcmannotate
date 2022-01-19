@@ -24,6 +24,14 @@ from .measurements import PointMeasurement, Point
 from .annotations import Annotations, AnnotationSet
 from .serialization import AnnotationEncoder
 
+pydicom.datadict.add_private_dict_entries(
+    "dcmannotate",
+    {
+        0x00911000: ("UL", "1", "AnnotationDataVersion", "Annotation data version"),
+        0x00911001: ("LT", "1", "AnnotationData", "Annotation data"),
+    },
+)
+
 
 class SRWriter:
     def __init__(self) -> None:
@@ -201,7 +209,8 @@ class SecondaryCaptureWriter:
             k = AnnotationEncoder()
             block.add_new(0, "UL", 1)
             if annotations:
-                block.add_new(1, "LT", k.encode(annotations))
+                encoded = k.encode(annotations)
+                block.add_new(1, "LT", encoded)
             else:
                 block.add_new(1, "LT", "{}")
             sc.SeriesInstanceUID = uid
