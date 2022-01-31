@@ -8,7 +8,9 @@ from dcmannotate import PointMeasurement, Ellipse, Point
 from pydicom.sr.coding import Code
 from pathlib import Path
 from dcmannotate.annotations import AnnotationSet, Annotations
-from dcmannotate.dicomvolume import DicomVolume
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:  # avoid circular import
+    from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.measurements import Measurement
 
 
@@ -89,7 +91,7 @@ def get_measurements(
 
 
 def read_annotations(
-    volume: Union[DicomVolume, Sequence[Dataset]],
+    volume: Union["DicomVolume", Sequence[Dataset]],
     sr_files: Sequence[Union[Dataset, str, Path]],
 ) -> AnnotationSet:
     assert len(sr_files) > 0

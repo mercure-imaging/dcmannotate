@@ -10,6 +10,28 @@ from . import DicomVolume
 
 from dcmannotate import readers
 import pydicom
+import logging
+from .utils import annotation_format
+log = logging.getLogger(f"{__package__}.{__name__}")
+
+
+def log_config():
+    log.setLevel(logging.INFO)
+    FORMAT = '%(levelname)s: %(message)s'
+    formatter = logging.Formatter(FORMAT)
+    # 2 handlers for the same logger:
+    h1 = logging.StreamHandler(sys.stdout)
+    h1.setLevel(logging.DEBUG)
+    # filter out everything that is above INFO level (WARN, ERROR, ...)
+    h1.addFilter(lambda record: record.levelno <= logging.INFO)
+    h1.setFormatter(formatter)
+    log.addHandler(h1)
+    h2 = logging.StreamHandler(sys.stderr)
+    # take only warnings and error logs
+    h2.setLevel(logging.WARNING)
+    h2.setFormatter(formatter)
+    log.addHandler(h2)
+    return log
 
 
 def write(args: Any) -> None:
@@ -31,7 +53,7 @@ def write(args: Any) -> None:
     elif args.format == "visage":
         volume.write_visage(args.destination)
     else:
-        print(f"Unsupported format {args.format}")
+        log.error(f"Unsupported format {args.format}")
         exit(1)
 
 
@@ -47,24 +69,18 @@ def maybe_glob(path_list: List[Path]) -> List[Path]:
 
 
 def read(args: Any) -> None:
+    if not args.annotation_files:
+        log.fatal("No annotation files provided.")
+        exit(1)
     in_files = maybe_glob(args.annotation_files)
     datasets = [pydicom.dcmread(f) for f in in_files]
 
-    format = None
-    try:
-        block = datasets[0].private_block(0x0091, "dcmannotate")
-        format = "sc"
-    except KeyError as e:
-        pass
+    format = annotation_format(datasets)
+
     if format is None:
-        if datasets[0].SOPClassUID == "1.2.840.10008.5.1.4.1.1.88.22" and datasets[0].CodingSchemeIdentificationSequence[0].CodingSchemeDesignator == "99dcmjs":
-            format = "sr"
-        elif datasets[0].Manufacturer == "Visage PR":
-            format = "visage"
-        else:
-            print(
-                "Unable to detect annotation format. This may not be a dcmannotate file.")
-            exit(1)
+        log.fatal(
+            "Unable to detect annotation format. This may not be a dcmannotate file.")
+        exit(1)
 
     annotations: Any = []
 
@@ -80,7 +96,8 @@ def read(args: Any) -> None:
                 annotations.append(a)
     elif format == "visage":
         if not args.volume_files:
-            print("ERROR: Input appears to be a Visage PR. For these files, you must pass the original volume with -v")
+            log.fatal(
+                "Input appears to be a Visage PR. For these files, you must pass the original volume with -v")
             exit(1)
         in_volume = DicomVolume(maybe_glob(args.volume_files))
         annotations = readers.visage.read_annotations(in_volume, in_files[0])
@@ -94,6 +111,9 @@ parser = argparse.ArgumentParser(
     python -m dcmannotate read -i ./slice_sr.*.dcm
     python -m dcmannotate read -i visage_pr.dcm -v slice.[0-9].dcm
     """, formatter_class=argparse.RawTextHelpFormatter)
+
+parser.set_defaults(func=lambda x: log.info(parser.format_help()))
+
 subparsers = parser.add_subparsers()
 
 write_parser = subparsers.add_parser(
@@ -118,5 +138,6 @@ read_parser.add_argument(
 
 read_parser.set_defaults(func=read)
 if __name__ == '__main__':
+    log_config()
     args = parser.parse_args()
     args.func(args)  # call the default function

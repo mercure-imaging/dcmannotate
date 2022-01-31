@@ -9,8 +9,6 @@ import highdicom as hd
 from highdicom.sc.sop import SCImage
 
 from typing import TYPE_CHECKING
-
-
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
 

@@ -1,3 +1,5 @@
+from dcmannotate import serialization
+from .utils import annotation_format
 from .annotations import AnnotationSet, Annotations
 from typing import (
     Any,
@@ -14,7 +16,8 @@ import pydicom
 from pydicom.dataset import Dataset
 from pydicom import dcmread
 
-from . import writers
+from . import writers, readers
+
 from .measurements import *
 
 import tempfile
@@ -69,13 +72,48 @@ class DicomVolume:
             )
         if type(annotation_set) is list:
             annotation_set = AnnotationSet(annotation_set)
-        assert type(annotation_set) is AnnotationSet
+        if not type(annotation_set) is AnnotationSet:
+            raise ValueError(
+                f"Unexpected annotation_set, expected AnnotationSet or List[Annotations], received {type(annotation_set)}")
         for a in annotation_set:
             if a.reference and a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
                 raise ValueError(
                     "An Annotation does not reference this DicomVolume's SeriesInstanceUID."
                 )
         self.annotation_set = annotation_set
+
+    def annotate_from(self, datasets: Union[Sequence[Union[Dataset, str, Path]], str, Path], force: bool = False) -> None:
+        """Annotate this dicom volume with annotations from the provided dicom files or Datasets.
+
+        Args:
+            datasets (Sequence[Union[Dataset, str, Path]]): A list of dicom files or loaded datasets
+            force (bool, optional): Replace existing annotations, if any. Defaults to False.
+        """
+
+        if isinstance(datasets, list) and isinstance(datasets[0], (str, Path)):
+            datasets = [pydicom.dcmread(d) for d in datasets]
+        elif isinstance(datasets, (str, Path)):
+            datasets = pydicom.dcmread(datasets)
+        format = annotation_format(datasets)
+        if format == "sr":
+            reader = readers.sr
+        elif format == "sc":
+            reader = readers.sc
+        elif format == "visage":
+            reader = readers.visage
+        else:
+            raise Exception("Not a dcmannotate-formatted annotation file.")
+        self.annotate_with(reader.read_annotations(self, datasets), force)
+
+    def annotate_from_json(self, json: str, force: bool = False) -> None:
+        """Annotate this dicom volume with annotations from the provided json string. 
+
+        Args:
+            json (str): json-encoded annotations.
+            force (bool, optional): Replace existing annotations, if any. Defaults to False.
+        """
+        self.annotate_with(
+            serialization.read_annotations_from_json(self, json), force)
 
     def load(
         self,

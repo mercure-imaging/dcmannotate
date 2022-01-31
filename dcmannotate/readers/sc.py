@@ -5,7 +5,9 @@ import pydicom
 from pydicom.dataset import Dataset
 from pathlib import Path
 from dcmannotate.annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
-from dcmannotate.dicomvolume import DicomVolume
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:  # avoid circular import
+    from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.serialization import AnnotationDecoder
 
 pydicom.datadict.add_private_dict_entries(
@@ -49,8 +51,8 @@ def parse_annotations(json: str) -> Optional[AnnotationsParsed]:
     return result
 
 
-def read_annotations(volume: DicomVolume,
-                     sc_files: Union[DicomVolume, Sequence[Union[Dataset, str, Path]]]) -> AnnotationSet:
+def read_annotations(volume: "DicomVolume",
+                     sc_files: Union["DicomVolume", Sequence[Union[Dataset, str, Path]]]) -> AnnotationSet:
     annotations = []
     for f in sc_files:
         measurements = get_measurements(f)

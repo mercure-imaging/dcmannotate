@@ -188,11 +188,15 @@ def test_roundtrip_sr(input_volume_annotated: DicomVolume) -> None:
     srs = input_volume_annotated.make_sr()
     read_annotations = readers.sr.read_annotations(input_volume_annotated, srs)
     assert input_volume_annotated.annotation_set == read_annotations
+    input_volume_annotated.annotate_from(srs, True)
+    assert input_volume_annotated.annotation_set == read_annotations
 
 
 def test_roundtrip_sc(input_volume_annotated: DicomVolume) -> None:
-    srs = input_volume_annotated.make_sc()
-    read_annotations = readers.sc.read_annotations(input_volume_annotated, srs)
+    scs = input_volume_annotated.make_sc()
+    read_annotations = readers.sc.read_annotations(input_volume_annotated, scs)
+    assert input_volume_annotated.annotation_set == read_annotations
+    input_volume_annotated.annotate_from(scs, True)
     assert input_volume_annotated.annotation_set == read_annotations
 
 
@@ -205,9 +209,12 @@ def test_from_json(input_volume: DicomVolume, input_annotation_set: AnnotationSe
 
 
 def test_roundtrip_visage(input_volume_annotated: DicomVolume) -> None:
-    srs = input_volume_annotated.make_visage()
+    visage_annotation = input_volume_annotated.make_visage()
     read_annotations = readers.visage.read_annotations(
-        input_volume_annotated, srs)
+        input_volume_annotated, visage_annotation)
+    assert input_volume_annotated.annotation_set == read_annotations
+
+    input_volume_annotated.annotate_from(visage_annotation, True)
     assert input_volume_annotated.annotation_set == read_annotations
 
 

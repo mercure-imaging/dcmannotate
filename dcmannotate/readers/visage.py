@@ -7,7 +7,9 @@ from pydicom.sr.codedict import codes
 from dcmannotate import PointMeasurement, Ellipse, Point
 from pathlib import Path
 from dcmannotate.annotations import AnnotationSet, Annotations
-from dcmannotate.dicomvolume import DicomVolume
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:  # avoid circular import
+    from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.measurements import Measurement
 from defusedxml.ElementTree import fromstring as xml_from_string  # type: ignore
 
@@ -65,7 +67,7 @@ def get_measurements(
 
 
 def read_annotations(
-    volume: DicomVolume,
+    volume: "DicomVolume",
     visage_files: Union[Dataset, str, Path],
 ) -> AnnotationSet:
     measurement_sets = get_measurements(visage_files)
