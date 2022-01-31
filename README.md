@@ -113,7 +113,7 @@ The output is a JSON-formatted list of objects encoding the annotations on each 
 
 To write a set of annotations, you must specify which output format to use (sc, sr, or visage), provide the input dicom series, and specify the output file(s) with a pattern. The annotations themselves are provided in the same JSON format as above, and if they aren't specified as a keyword parameter, they will be read from `stdin`.
 
-```json
+```bash
 python -m DCMAnnotate write sc -i in/slice.*.dcm -o "out/slice_sc.*.dcm" -a '[{"arrows": ..., "reference_sop_uid": ...}]'
 
 echo -a '[{"arrows": ..., "reference_sop_uid": ...}]' | python -m DCMAnnotate write visage -i in/slice.*.dcm -o "out/visage_pr.dcm" 
