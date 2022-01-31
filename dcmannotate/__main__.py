@@ -15,7 +15,7 @@ from .utils import annotation_format
 log = logging.getLogger(f"{__package__}.{__name__}")
 
 
-def log_config():
+def log_config() -> logging.Logger:
     log.setLevel(logging.INFO)
     FORMAT = '%(levelname)s: %(message)s'
     formatter = logging.Formatter(FORMAT)

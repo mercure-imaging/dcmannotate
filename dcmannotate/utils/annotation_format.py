@@ -1,12 +1,12 @@
 
-from typing import List, Union
+from typing import List, Optional, Sequence, Union
 from pydicom import Dataset
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
 
 
-def annotation_format(datasets: Union["DicomVolume", List[Dataset], Dataset]) -> str:
+def annotation_format(datasets: Union["DicomVolume", Sequence[Dataset], Dataset]) -> Optional[str]:
     if isinstance(datasets, Dataset):
         dataset = datasets
     else:
@@ -22,4 +22,4 @@ def annotation_format(datasets: Union["DicomVolume", List[Dataset], Dataset]) ->
         return "sr"
     elif dataset.Manufacturer == "Visage PR":
         return "visage"
-    return format
+    return None

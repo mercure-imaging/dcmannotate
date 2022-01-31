@@ -1,3 +1,4 @@
+import types
 from dcmannotate import serialization
 from .utils import annotation_format
 from .annotations import AnnotationSet, Annotations
@@ -82,7 +83,7 @@ class DicomVolume:
                 )
         self.annotation_set = annotation_set
 
-    def annotate_from(self, datasets: Union[Sequence[Union[Dataset, str, Path]], str, Path], force: bool = False) -> None:
+    def annotate_from(self, datasets: Union[Dataset, "DicomVolume", Sequence[Union[Dataset, str, Path]], str, Path], force: bool = False) -> None:
         """Annotate this dicom volume with annotations from the provided dicom files or Datasets.
 
         Args:
@@ -94,7 +95,8 @@ class DicomVolume:
             datasets = [pydicom.dcmread(d) for d in datasets]
         elif isinstance(datasets, (str, Path)):
             datasets = pydicom.dcmread(datasets)
-        format = annotation_format(datasets)
+        format = annotation_format(datasets)  # type: ignore
+        reader: types.ModuleType
         if format == "sr":
             reader = readers.sr
         elif format == "sc":
