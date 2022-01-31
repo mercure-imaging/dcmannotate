@@ -80,7 +80,7 @@ class Ellipse(Measurement):
     def __json_serializable__(self) -> Dict[str, Any]:
         return {
             **super().__json_serializable__(),
-            **dict(center=self.center, rx=self.rx, ry=self.ry),
+            **dict(center_x=self.center.x, center_y=self.center.y, rx=self.rx, ry=self.ry),
         }
 
 

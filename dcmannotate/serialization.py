@@ -29,7 +29,7 @@ class AnnotationDecoder(JSONDecoder):
             ]
             ellipses = [
                 Ellipse(
-                    Point(k["center"][0], k["center"][1]),
+                    Point(k["center_x"], k["center_y"]),
                     k["rx"],
                     k["ry"],
                     k["unit"],
@@ -40,7 +40,6 @@ class AnnotationDecoder(JSONDecoder):
             measurements: List[Measurement]
             measurements = arrows + ellipses   # type: ignore
             return AnnotationsParsed(measurements,  dct["reference_sop_uid"])
-        # and isinstance(dct[0], AnnotationsParsed):
         return dct
 
 
