@@ -2,6 +2,9 @@
 
 DCMAnnotate is an experimental python library for generating simple annotations on DICOM volumes. 
 
+![GitHub](https://img.shields.io/github/license/mercure-imaging/dcmannotate)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/mercure-imaging/dcmannotate/pythonapp)
+
 ## Supported output formats
 
 - DICOM SR TID1500 Measurement Report
