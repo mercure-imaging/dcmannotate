@@ -2,7 +2,6 @@
 import pydicom
 import pathlib
 import zlib
-import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
 from pydicom.sequence import Sequence
 from pydicom.uid import generate_uid
@@ -10,7 +9,7 @@ from pydicom.uid import generate_uid
 from jinja2 import Environment, FileSystemLoader
 from jinja2 import StrictUndefined
 
-from dcmannotate.annotations import *
+from dcmannotate.annotations import AnnotationSet
 import hashlib
 from datetime import datetime
 from typing import TYPE_CHECKING

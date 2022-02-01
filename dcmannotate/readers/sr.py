@@ -1,6 +1,5 @@
 from os import PathLike
-from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
-import zlib
+from typing import List,  Sequence, Tuple, Union, cast
 import pydicom
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import _CodesDict, codes

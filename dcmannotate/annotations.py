@@ -13,7 +13,7 @@ from typing import Sequence as SequenceType
 from pydicom.dataset import Dataset
 from pydicom import dcmread
 
-from .measurements import *
+from .measurements import Measurement, PointMeasurement, Ellipse
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -115,7 +115,7 @@ class AnnotationsParsed(Annotations):
 
 
 class AnnotationSet:
-    """All the annotations for a particular volume, organized by slice. 
+    """All the annotations for a particular volume, organized by slice.
     """
 
     def __init__(self, annotations_list: List[Annotations]):

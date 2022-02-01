@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 # type: ignore
 
-import os
 import zlib
 from pydicom import dcmread
-import pydicom
 import sys
 
 

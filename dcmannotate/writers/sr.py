@@ -1,4 +1,3 @@
-import math
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import List, Optional
@@ -71,7 +70,7 @@ def generate_dicoms(
             if elem.name == "Concept Code Sequence":
                 try:
                     long_code_value = elem[0].LongCodeValue
-                except:
+                except Exception:
                     continue
                 if long_code_value == "CORNERSTONEFREETEXT":
                     elem[0].add_new("CodeValue", "SH",

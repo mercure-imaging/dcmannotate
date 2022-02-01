@@ -1,10 +1,9 @@
 from os import PathLike
-from typing import Dict, List, Optional, Sequence, Tuple, Union, cast
-import zlib
+from typing import Optional, Sequence, Union
 import pydicom
 from pydicom.dataset import Dataset
 from pathlib import Path
-from dcmannotate.annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
+from dcmannotate.annotations import AnnotationSet, AnnotationsParsed
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume

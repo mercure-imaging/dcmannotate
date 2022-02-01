@@ -31,7 +31,7 @@ def arrowedLine(
     # = it will be a triangle with one vertex at ptB
     # - it will start at 95% of the length of the line
     # - it will extend 8 pixels either side of the line
-    x0, y0 = (ptA.x, ptA.y)
+    # x0, y0 = (ptA.x, ptA.y)
     x1, y1 = (ptB.x, ptB.y)
     # Now we can work out the x,y coordinates of the bottom of the arrowhead triangle
 
@@ -49,7 +49,8 @@ def arrowedLine(
 
     vtx0 = (xb + -vec.y * 8, yb + vec.x * 8)
     vtx1 = (xb + vec.y * 8, yb + -vec.x * 8)
-    # draw.point((xb,yb), fill=(255,0,0))    # DEBUG: draw point of base in red - comment out draw.polygon() below if using this line
+    # DEBUG: draw point of base in red
+    # draw.point((xb,yb), fill=(255,0,0))
     # im.save('DEBUG-base.png')              # DEBUG: save
 
     # Now draw the arrowhead triangle

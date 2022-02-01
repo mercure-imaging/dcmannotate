@@ -19,7 +19,6 @@ from pydicom import dcmread
 
 from . import writers, readers
 
-from .measurements import *
 
 import tempfile
 
@@ -64,8 +63,10 @@ class DicomVolume:
         """Annotate this dicom volume.
 
         Args:
-            annotation_set (Union[AnnotationSet,List[Annotations]]): Supply a list of Annotations, or an instance of AnnotationSet
-            force (bool, optional): Replace existing annotations, if any. Defaults to False.
+            annotation_set (Union[AnnotationSet,List[Annotations]]):
+                Supply a list of Annotations, or an instance of AnnotationSet
+            force (bool, optional):
+                Replace existing annotations, if any. Defaults to False.
         """
         if self.annotation_set and not force:
             raise ValueError(
@@ -83,7 +84,11 @@ class DicomVolume:
                 )
         self.annotation_set = annotation_set
 
-    def annotate_from(self, datasets: Union[Dataset, "DicomVolume", Sequence[Union[Dataset, str, Path]], str, Path], force: bool = False) -> None:
+    def annotate_from(
+        self,
+        datasets: Union[Dataset, "DicomVolume", Sequence[Union[Dataset, str, Path]], str, Path],
+        force: bool = False
+    ) -> None:
         """Annotate this dicom volume with annotations from the provided dicom files or Datasets.
 
         Args:
@@ -108,7 +113,7 @@ class DicomVolume:
         self.annotate_with(reader.read_annotations(self, datasets), force)
 
     def annotate_from_json(self, json: str, force: bool = False) -> None:
-        """Annotate this dicom volume with annotations from the provided json string. 
+        """Annotate this dicom volume with annotations from the provided json string.
 
         Args:
             json (str): json-encoded annotations.
@@ -139,10 +144,10 @@ class DicomVolume:
         self.__datasets = self.sort_by_z(datasets)
 
     def make_sc(self) -> "DicomVolume":
-        """Generate a set of Secondary Capture images as a DicomVolume. 
+        """Generate a set of Secondary Capture images as a DicomVolume.
 
         Returns:
-            DicomVolume: A DicomVolume with the resulting SC images as slices. 
+            DicomVolume: A DicomVolume with the resulting SC images as slices.
         """
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
@@ -174,7 +179,9 @@ class DicomVolume:
         """Write out Dicom Structured Reports.
 
         Args:
-            pattern (string, optional): Pattern for output file names, eg "./out/slice_sr.*.dcm". If None, uses input filenames as basis. Defaults to None.
+            pattern (string, optional):
+                Pattern for output file names, eg "./out/slice_sr.*.dcm".
+                If None, uses input filenames as basis. Defaults to None.
 
         Raises:
             Exception: This volume must be annotated.
@@ -206,7 +213,7 @@ class DicomVolume:
         return Path(filepath)
 
     def save_as(self, pattern: Union[str, PathLike]) -> List[Path]:
-        """Write out this volume to files, slice by slice. 
+        """Write out this volume to files, slice by slice.
 
         Args:
             pattern (str, Path): Pattern to use when writing files, eg "./out/slice_*.dcm"
@@ -268,8 +275,8 @@ class DicomVolume:
         return sorted_by_z
 
     def verify(self, datasets: List[Dataset]) -> None:
-        def attr_same(l: List[Any], attr: str) -> bool:
-            return all(getattr(x, attr) == getattr(l[0], attr) for x in l)
+        def attr_same(list: List[Any], attr: str) -> bool:
+            return all(getattr(x, attr) == getattr(list[0], attr) for x in list)
 
         tags_equal = [
             "ImageOrientationPatient",

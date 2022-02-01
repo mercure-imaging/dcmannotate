@@ -1,10 +1,10 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List
 from dcmannotate import serialization
 
-from dcmannotate.annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
+from dcmannotate.annotations import AnnotationsParsed
 from dcmannotate.serialization import AnnotationEncoder
 from . import DicomVolume
 
@@ -117,24 +117,31 @@ parser.set_defaults(func=lambda x: log.info(parser.format_help()))
 subparsers = parser.add_subparsers()
 
 write_parser = subparsers.add_parser(
-    'write',  help="Write dicom annotations.")
+    'write',
+    help="Write dicom annotations.")
 write_parser.add_argument(
-    'format', choices=['sr', 'sc', 'visage'], help="Output format: Structured Report, Secondary Capture, or Visage")
+    'format', choices=['sr', 'sc', 'visage'],
+    help="Output format: Structured Report, Secondary Capture, or Visage")
 write_parser.add_argument(
-    '-i', '--volume-files', nargs='+', dest="volume_files", type=Path, help="Input volume paths. Accepts a list or a glob pattern.")
+    '-i', '--volume-files', nargs='+', dest="volume_files", type=Path,
+    help="Input volume paths. Accepts a list or a glob pattern.")
 write_parser.add_argument(
-    '-o', dest='destination', required=True, help="Output pattern or path, eg ./output/slice_annot.*.dcm or ./slice_visage.dcm")
+    '-o', dest='destination', required=True,
+    help="Output pattern or path, eg ./output/slice_annot.*.dcm or ./slice_visage.dcm")
 write_parser.add_argument(
-    '-a', '--annotations', nargs="?", dest='annotations', help="Annotations in JSON format. Omit to read from stdin.")
+    '-a', '--annotations', nargs="?", dest='annotations',
+    help="Annotations in JSON format. Omit to read from stdin.")
 write_parser.set_defaults(func=write)
 
 
 read_parser = subparsers.add_parser(
     'read',  help="Read dicom annotations.")
 read_parser.add_argument(
-    '-i', '--annotation-files', nargs='+', dest="annotation_files", type=Path, help="Annotation files to read. Accepts a list or a glob pattern.")
+    '-i', '--annotation-files', nargs='+', dest="annotation_files", type=Path,
+    help="Annotation files to read. Accepts a list or a glob pattern.")
 read_parser.add_argument(
-    '-v', '--volume-files', nargs='+', dest="volume_files", type=Path, help="For Visage only: files corresponding to the referenced dicom volume. Accepts a list or a glob pattern.")
+    '-v', '--volume-files', nargs='+', dest="volume_files", type=Path,
+    help="For Visage only: files corresponding to the referenced dicom volume. Accepts a list or a glob pattern.")
 
 read_parser.set_defaults(func=read)
 if __name__ == '__main__':
