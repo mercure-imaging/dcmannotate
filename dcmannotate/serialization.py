@@ -1,9 +1,9 @@
-from json import JSONEncoder, JSONDecoder
-from typing import Any, List, Union, Dict
-from .measurements import Measurement, PointMeasurement, Ellipse, Point
-from .annotations import AnnotationSet, AnnotationsParsed, AnnotationSetParsed
+from json import JSONDecoder, JSONEncoder
 
-from typing import TYPE_CHECKING
+from typing import Any, Dict, List, TYPE_CHECKING, Union
+
+from .annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
+from .measurements import Ellipse, Measurement, Point, PointMeasurement
 
 if TYPE_CHECKING:
     from .dicomvolume import DicomVolume

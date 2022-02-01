@@ -1,16 +1,16 @@
 import argparse
+import logging
 import sys
 from pathlib import Path
 from typing import Any, List
-from dcmannotate import serialization
+
+import pydicom
+
+from dcmannotate import readers, serialization
 
 from dcmannotate.annotations import AnnotationsParsed
 from dcmannotate.serialization import AnnotationEncoder
 from . import DicomVolume
-
-from dcmannotate import readers
-import pydicom
-import logging
 from .utils import annotation_format
 
 log = logging.getLogger(f"{__package__}.{__name__}")

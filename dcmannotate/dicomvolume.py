@@ -1,29 +1,19 @@
-import types
-from dcmannotate import serialization
-from .utils import annotation_format
-from .annotations import AnnotationSet, Annotations
-from typing import (
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
-import numpy as np  # type: ignore
-from pathlib import Path
-import pydicom
-from pydicom.dataset import Dataset
-from pydicom import dcmread
-
-from . import writers, readers
-
-
 import tempfile
+import types
+from pathlib import Path
 
+from typing import Any, Dict, Iterator, List, Optional, Sequence, TYPE_CHECKING, Union
 
-from typing import TYPE_CHECKING
+import numpy as np  # type: ignore
+import pydicom
+from pydicom import dcmread
+from pydicom.dataset import Dataset
+
+from dcmannotate import serialization
+
+from . import readers, writers
+from .annotations import Annotations, AnnotationSet
+from .utils import annotation_format
 
 if TYPE_CHECKING:
     # https://mypy.readthedocs.io/en/latest/runtime_troubles.html#using-classes-that-are-generic-in-stubs-but-not-at-runtime

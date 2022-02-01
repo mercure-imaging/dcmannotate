@@ -2,12 +2,7 @@
 
 __version__ = "0.0.1"
 from .annotations import Annotations, AnnotationSet
-from .measurements import (
-    Point,
-    Measurement,
-    PointMeasurement,
-    Ellipse,
-)
+from .measurements import Ellipse, Measurement, Point, PointMeasurement  # usort: skip
 from .dicomvolume import DicomVolume
 
 __all__ = [

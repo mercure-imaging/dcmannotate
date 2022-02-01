@@ -1,6 +1,6 @@
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, TYPE_CHECKING, Union
+
 from pydicom import Dataset
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume

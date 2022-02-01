@@ -1,11 +1,7 @@
-from typing import (
-    Any,
-    Dict,
-    Optional,
-    Union,
-)
-from pydicom.sr.codedict import codes
 from collections import namedtuple
+from typing import Any, Dict, Optional, Union
+
+from pydicom.sr.codedict import codes
 
 from pydicom.sr.coding import Code
 

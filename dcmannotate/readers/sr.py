@@ -1,13 +1,14 @@
 from os import PathLike
-from typing import List, Sequence, Tuple, Union, cast
+from pathlib import Path
+from typing import cast, List, Sequence, Tuple, TYPE_CHECKING, Union
+
 import pydicom
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import _CodesDict, codes
-from dcmannotate import PointMeasurement, Ellipse, Point
 from pydicom.sr.coding import Code
-from pathlib import Path
-from dcmannotate.annotations import AnnotationSet, Annotations
-from typing import TYPE_CHECKING
+
+from dcmannotate import Ellipse, Point, PointMeasurement
+from dcmannotate.annotations import Annotations, AnnotationSet
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume

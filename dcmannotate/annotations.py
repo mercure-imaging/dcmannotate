@@ -1,4 +1,5 @@
 from os import PathLike
+
 from typing import (
     Any,
     Dict,
@@ -6,16 +7,16 @@ from typing import (
     KeysView,
     List,
     Optional,
+    Sequence as SequenceType,
+    TYPE_CHECKING,
     Union,
     ValuesView,
 )
-from typing import Sequence as SequenceType
-from pydicom.dataset import Dataset
+
 from pydicom import dcmread
+from pydicom.dataset import Dataset
 
-from .measurements import Measurement, PointMeasurement, Ellipse
-
-from typing import TYPE_CHECKING
+from .measurements import Ellipse, Measurement, PointMeasurement
 
 if TYPE_CHECKING:
     from .dicomvolume import DicomVolume

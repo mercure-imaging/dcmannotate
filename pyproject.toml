@@ -29,10 +29,6 @@ exclude = ["doc/*.html", ".github", ".gitignore", ".vscode", ".coveragerc"]
 [project.scripts]
 flit = "dcmannotate.__main__:console_entry"
 
-[flake8]
-max-line-length = 95
-extend-ignore = ["E203"]
-
 [tool.black]
 line-length = 95
 target-version = ['py36']

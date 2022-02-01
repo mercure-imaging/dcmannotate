@@ -1,18 +1,20 @@
-from os import PathLike
-from typing import Dict, List, Union
 import zlib
+from os import PathLike
+from pathlib import Path
+from typing import Dict, List, TYPE_CHECKING, Union
+
 import pydicom
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
-from dcmannotate import PointMeasurement, Ellipse, Point
-from pathlib import Path
-from dcmannotate.annotations import AnnotationSet, Annotations
-from typing import TYPE_CHECKING
+
+from dcmannotate import Ellipse, Point, PointMeasurement
+from dcmannotate.annotations import Annotations, AnnotationSet
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
-from dcmannotate.measurements import Measurement
 from defusedxml.ElementTree import fromstring as xml_from_string  # type: ignore
+
+from dcmannotate.measurements import Measurement
 
 
 def decode(t: bytes) -> str:

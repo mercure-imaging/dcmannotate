@@ -1,11 +1,11 @@
 from pathlib import Path
-from subprocess import run, PIPE
+from subprocess import PIPE, run
 from typing import List, Optional
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
+
 import pydicom
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from pydicom.uid import generate_uid
-
 
 from dcmannotate.annotations import Annotations, AnnotationSet
 

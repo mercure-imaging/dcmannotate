@@ -1,20 +1,19 @@
 import math
-import numpy as np  # type: ignore
-from PIL import Image, ImageDraw, ImageFont  # type: ignore
-from typing import Any, List, Sequence
 
-from pydicom.dataset import Dataset
+from typing import Any, List, Sequence, TYPE_CHECKING
 
 import highdicom as hd
+import numpy as np  # type: ignore
 from highdicom.sc.sop import SCImage
+from PIL import Image, ImageDraw, ImageFont  # type: ignore
 
-from typing import TYPE_CHECKING
+from pydicom.dataset import Dataset
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
 
-from dcmannotate.measurements import PointMeasurement, Point
 from dcmannotate.annotations import Annotations, AnnotationSet
+from dcmannotate.measurements import Point, PointMeasurement
 from dcmannotate.serialization import AnnotationEncoder
 
 

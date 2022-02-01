@@ -1,18 +1,18 @@
 #!/usr/bin/python3
-import pydicom
+import hashlib
 import pathlib
 import zlib
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+import pydicom
+
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from pydicom.dataset import Dataset, FileMetaDataset
 from pydicom.sequence import Sequence
 from pydicom.uid import generate_uid
 
-from jinja2 import Environment, FileSystemLoader
-from jinja2 import StrictUndefined
-
 from dcmannotate.annotations import AnnotationSet
-import hashlib
-from datetime import datetime
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from dcmannotate.dicomvolume import DicomVolume
