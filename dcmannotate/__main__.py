@@ -110,8 +110,8 @@ def make_parser() -> argparse.ArgumentParser:
         "dcmannotate",
         description="Command-line interface to dcmannotate.",
         epilog="""Examples:
-        python -m dcmannotate read -i ./slice_sr.*.dcm
-        python -m dcmannotate read -i visage_pr.dcm -v slice.[0-9].dcm
+        dcmannotate read -i ./slice_sr.*.dcm
+        dcmannotate read -i visage_pr.dcm -v slice.[0-9].dcm
         """,
         formatter_class=argparse.RawTextHelpFormatter,
     )

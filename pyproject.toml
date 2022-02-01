@@ -7,7 +7,14 @@ name = "dcmannotate"
 authors = [{name = "Roy Wiggins", email = "roy.wiggins@nyulangone.org"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        'Intended Audience :: Science/Research',
+        'Topic :: Multimedia :: Graphics',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Development Status :: 3 - Alpha'
+        ]
 dynamic = ["version", "description"]
 dependencies = [
     "highdicom~=0.12.1",
@@ -25,9 +32,9 @@ Home = "https://github.com/mercure-imaging/dcmannotate"
 [tool.flit.sdist]
 include = ["doc/"]
 exclude = ["doc/*.html", ".github", ".gitignore", ".vscode", ".coveragerc"]
-
+ 
 [project.scripts]
-flit = "dcmannotate.__main__:console_entry"
+dcmannotate = "dcmannotate.__main__:console_entry"
 
 [tool.black]
 line-length = 95
