@@ -1,8 +1,9 @@
 #!/usr/bin/python3
 
 import datetime
+import hashlib
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset
 import sys
@@ -32,7 +33,7 @@ def julia(arg: complex, m: int = 256, n: int = 512) -> Any:
     y = np.linspace(-2, 2, num=n).reshape((n, 1))
     C = np.tile(x, (n, 1)) + 1j * np.tile(y, (1, m))
 
-    Z = np.zeros((n, m), dtype=complex)
+    # Z = np.zeros((n, m), dtype=complex)
     M = np.full((n, m), True, dtype=bool)
     K = np.full((n, m), 1, dtype=np.uint16)
 
@@ -45,8 +46,11 @@ def julia(arg: complex, m: int = 256, n: int = 512) -> Any:
     return K
 
 
-def nums(n: int) -> str:
-    return "".join(random.choice(string.digits) for i in range(n))
+def nums(n: int, source: Optional[str] = None) -> str:
+    if not source:
+        return "".join(random.choice(string.digits) for i in range(n))
+    else:
+        return "".join([str(int(x)) for x in hashlib.md5(source.encode()).digest()])[0:n]
 
 
 dt = datetime.datetime.now()
@@ -57,10 +61,12 @@ def generate_file(
     series: str,
     slice_number: int,
     acc: str,
-    studyid: str,
+    study_uid: str,
     desc: str,
     image: Any,
     orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
+    patient_name: Optional[str] = "Julia^Set",
+    patient_id: Optional[str] = "JULIATEST"
 ) -> Dataset:
     normal_vec = np.cross(orientation[0], orientation[1])
 
@@ -87,11 +93,11 @@ def generate_file(
     ds.StudyTime = dt.strftime("%H%M")
     ds.AccessionNumber = acc
     ds.Modality = "MR"
-    ds.PatientName = "Julia^Set"
-    ds.PatientID = "JULIATEST"
+    ds.PatientName = patient_name
+    ds.PatientID = patient_id
     ds.PatientBirthDate = "19700101"
     ds.PatientSex = "O"
-    ds.StudyInstanceUID = studyid
+    ds.StudyInstanceUID = study_uid
     ds.SeriesInstanceUID = series
     ds.FrameOfReferenceUID = series
     ds.SeriesDescription = desc
@@ -129,21 +135,30 @@ def generate_test_series(
     pt: complex = -0.3 - 0.0j,
     n: int = 10,
     orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
+    accession: Optional[str] = None,
+    study_id: Optional[str] = None,
+    patient_name: Optional[str] = None,
+    patient_id: Optional[str] = None,
+    series_description: Optional[str] = None
 ) -> List[Dataset]:
-    study_uid = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.2.")
+    acc = accession or nums(7)
+    study = study_id or nums(8)
     series = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.3.")
-    acc = nums(7)
-    study = nums(8)
+    study_uid = pydicom.uid.generate_uid(
+        prefix="1.2.276.0.7230010.3.1.2.", entropy_srcs=[study])
+    description = series_description or f"Julia set around {pt}"
+    if patient_name and not patient_id:
+        patient_id = nums(8, patient_name)
+    print(f"acc {acc}, study {study}, series {series}, description {description}")
     datasets = []
 
-    description = f"Julia set around {pt}"
     for i in range(n):
         pt_at = pt + 0.1j * (i - n / 2)
         array = julia(pt_at)
         # print(array)
         datasets.append(
             generate_file(
-                study, series, i, acc, study_uid, description, array, orientation
+                study, series, i, acc, study_uid, description, array, orientation, patient_name, patient_id
             )
         )
     return datasets
@@ -163,7 +178,28 @@ def generate_series(
     return files
 
 
+def generate_several_protocols(base_path: str) -> List[Path]:
+    f: Path = Path(base_path)
+    f.mkdir(parents=True, exist_ok=True)
+    protocols = ["PROT1", "PROT2", "PROT1_DL", "PROT2_DL"]
+    acc = nums(7)
+    study = nums(8)
+    patient_name = "Patient 1"
+    files = []
+    for p in protocols:
+        datasets = generate_test_series(
+            0.3 - 0.0j, 5, [[1, 0, 0], [0, 1, 0]], acc, study, patient_name, None, p)
+        for i, d in enumerate(datasets):
+            (f / p).mkdir(exist_ok=True)
+            filename = f / p / f"slice.{i}.dcm"
+            d.save_as(filename)
+            files.append(filename)
+    return files
+
+
 if __name__ == "__main__":
     generate_series(sys.argv[1], int(sys.argv[2]))
+    # print(generate_test("/vagrant/blinding_test"))
+
 # result.save_as(f'/vagrant/test_series/slice.{i}.dcm')
 # ds.save_as(r'../mandel_from_codify.dcm', write_like_original=False)
