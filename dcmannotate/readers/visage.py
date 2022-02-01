@@ -8,6 +8,7 @@ from dcmannotate import PointMeasurement, Ellipse, Point
 from pathlib import Path
 from dcmannotate.annotations import AnnotationSet, Annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
 from dcmannotate.measurements import Measurement
@@ -18,9 +19,7 @@ def decode(t: bytes) -> str:
     return zlib.decompress(t[4:]).decode("utf-8")
 
 
-def get_measurements(
-    dataset: Union[Dataset, str, Path]
-) -> Dict[str, List[Measurement]]:
+def get_measurements(dataset: Union[Dataset, str, Path]) -> Dict[str, List[Measurement]]:
     ds: Dataset
     if isinstance(dataset, (str, PathLike)):
         ds = pydicom.dcmread(dataset)
@@ -38,8 +37,7 @@ def get_measurements(
     }
     for measurement in xml_data:
         meas_type = measurement.tag
-        origin = measurement.find(
-            "./coordinate_system/origin").text.split(" ")
+        origin = measurement.find("./coordinate_system/origin").text.split(" ")
         x, y = map(int, origin[0:2])
         z = float(origin[2])
         z_idx = int(z - 0.5)

@@ -16,13 +16,14 @@ from pydicom import dcmread
 from .measurements import Measurement, PointMeasurement, Ellipse
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .dicomvolume import DicomVolume
 
 
 class Annotations:
-    """Annotations for a slice.
-    """
+    """Annotations for a slice."""
+
     ellipses: List[Ellipse]
     arrows: List[PointMeasurement]
     reference: Dataset
@@ -34,8 +35,7 @@ class Annotations:
         reference_dataset: Union[Dataset, str],
     ):
         self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
-        self.arrows = [
-            k for k in measurements if isinstance(k, PointMeasurement)]
+        self.arrows = [k for k in measurements if isinstance(k, PointMeasurement)]
 
         if isinstance(reference_dataset, (str, PathLike)):
             reference_dataset = dcmread(reference_dataset)
@@ -55,10 +55,7 @@ class Annotations:
         if not isinstance(other, Annotations):
             raise NotImplementedError
 
-        if (
-            self.reference != other.reference
-            or self.SOPInstanceUID != other.SOPInstanceUID
-        ):
+        if self.reference != other.reference or self.SOPInstanceUID != other.SOPInstanceUID:
             return False
 
         for m in self:
@@ -71,13 +68,7 @@ class Annotations:
         return True
 
     def __repr__(self) -> str:
-        return (
-            "<"
-            + self.SOPInstanceUID
-            + ": "
-            + (self.ellipses + self.arrows).__repr__()  # type: ignore
-            + ">"
-        )
+        return "<" + self.SOPInstanceUID + ": " + (self.ellipses + self.arrows).__repr__() + ">"  # type: ignore
 
     def __json_serializable__(self) -> Dict[str, Any]:
         return {
@@ -88,8 +79,7 @@ class Annotations:
 
 
 class AnnotationsParsed(Annotations):
-    """Represents annotations for a slice as parsed. Unlike Annotations objects, it has no `reference` member.
-    """
+    """Represents annotations for a slice as parsed. Unlike Annotations objects, it has no `reference` member."""
 
     def __init__(
         self,
@@ -98,8 +88,7 @@ class AnnotationsParsed(Annotations):
     ):
         self.measurements = measurements
         self.ellipses = [k for k in measurements if isinstance(k, Ellipse)]
-        self.arrows = [
-            k for k in measurements if isinstance(k, PointMeasurement)]
+        self.arrows = [k for k in measurements if isinstance(k, PointMeasurement)]
         self.SOPInstanceUID = reference_sop_uid
 
     def with_reference(self, reference: Dataset) -> Annotations:
@@ -115,8 +104,7 @@ class AnnotationsParsed(Annotations):
 
 
 class AnnotationSet:
-    """All the annotations for a particular volume, organized by slice.
-    """
+    """All the annotations for a particular volume, organized by slice."""
 
     def __init__(self, annotations_list: List[Annotations]):
         self.__annotations: Dict[Any, Annotations] = {}
@@ -125,10 +113,10 @@ class AnnotationSet:
         for set_ in annotations_list:
             if set_.reference is None:
                 raise ValueError(
-                    "all Annotations in an AnnotationSet must have a reference dataset")
+                    "all Annotations in an AnnotationSet must have a reference dataset"
+                )
             if set_.SOPInstanceUID in self.__annotations:
-                raise ValueError(
-                    "Two Annotations must not reference the same dataset.")
+                raise ValueError("Two Annotations must not reference the same dataset.")
             if (
                 set_.reference.SeriesInstanceUID is None
                 or set_.reference.SeriesInstanceUID != series_uid
@@ -158,9 +146,7 @@ class AnnotationSet:
     def __getitem__(self, key: Any) -> Annotations:
         return self.__annotations[key]
 
-    def get(
-        self, key: Any, default: Optional[Annotations] = None
-    ) -> Optional[Annotations]:
+    def get(self, key: Any, default: Optional[Annotations] = None) -> Optional[Annotations]:
         return self.__annotations.get(key, default)
 
     def __repr__(self) -> str:

@@ -66,7 +66,7 @@ def generate_file(
     image: Any,
     orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
     patient_name: Optional[str] = "Julia^Set",
-    patient_id: Optional[str] = "JULIATEST"
+    patient_id: Optional[str] = "JULIATEST",
 ) -> Dataset:
     normal_vec = np.cross(orientation[0], orientation[1])
 
@@ -139,13 +139,14 @@ def generate_test_series(
     study_id: Optional[str] = None,
     patient_name: Optional[str] = None,
     patient_id: Optional[str] = None,
-    series_description: Optional[str] = None
+    series_description: Optional[str] = None,
 ) -> List[Dataset]:
     acc = accession or nums(7)
     study = study_id or nums(8)
     series = pydicom.uid.generate_uid(prefix="1.2.276.0.7230010.3.1.3.")
     study_uid = pydicom.uid.generate_uid(
-        prefix="1.2.276.0.7230010.3.1.2.", entropy_srcs=[study])
+        prefix="1.2.276.0.7230010.3.1.2.", entropy_srcs=[study]
+    )
     description = series_description or f"Julia set around {pt}"
     if patient_name and not patient_id:
         patient_id = nums(8, patient_name)
@@ -158,14 +159,25 @@ def generate_test_series(
         # print(array)
         datasets.append(
             generate_file(
-                study, series, i, acc, study_uid, description, array, orientation, patient_name, patient_id
+                study,
+                series,
+                i,
+                acc,
+                study_uid,
+                description,
+                array,
+                orientation,
+                patient_name,
+                patient_id,
             )
         )
     return datasets
 
 
 def generate_series(
-    k: Union[str, Path], n: int, orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]]
+    k: Union[str, Path],
+    n: int,
+    orientation: List[List[float]] = [[1, 0, 0], [0, 1, 0]],
 ) -> List[Path]:
     f: Path = Path(k)
     f.mkdir(parents=True, exist_ok=True)
@@ -188,7 +200,15 @@ def generate_several_protocols(base_path: str) -> List[Path]:
     files = []
     for p in protocols:
         datasets = generate_test_series(
-            0.3 - 0.0j, 5, [[1, 0, 0], [0, 1, 0]], acc, study, patient_name, None, p)
+            0.3 - 0.0j,
+            5,
+            [[1, 0, 0], [0, 1, 0]],
+            acc,
+            study,
+            patient_name,
+            None,
+            p,
+        )
         for i, d in enumerate(datasets):
             (f / p).mkdir(exist_ok=True)
             filename = f / p / f"slice.{i}.dcm"

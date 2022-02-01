@@ -12,12 +12,13 @@ from dcmannotate import readers
 import pydicom
 import logging
 from .utils import annotation_format
+
 log = logging.getLogger(f"{__package__}.{__name__}")
 
 
 def log_config() -> logging.Logger:
     log.setLevel(logging.INFO)
-    FORMAT = '%(levelname)s: %(message)s'
+    FORMAT = "%(levelname)s: %(message)s"
     formatter = logging.Formatter(FORMAT)
     # 2 handlers for the same logger:
     h1 = logging.StreamHandler(sys.stdout)
@@ -42,8 +43,7 @@ def write(args: Any) -> None:
         annotations = "\n".join(sys.stdin.readlines())
     else:
         annotations = args.annotations
-    annotation_set = serialization.read_annotations_from_json(
-        volume, annotations)
+    annotation_set = serialization.read_annotations_from_json(volume, annotations)
     volume.annotate_with(annotation_set)
 
     if args.format == "sc":
@@ -78,8 +78,7 @@ def read(args: Any) -> None:
     format = annotation_format(datasets)
 
     if format is None:
-        log.fatal(
-            "Unable to detect annotation format. This may not be a dcmannotate file.")
+        log.fatal("Unable to detect annotation format. This may not be a dcmannotate file.")
         exit(1)
 
     annotations: Any = []
@@ -97,7 +96,8 @@ def read(args: Any) -> None:
     elif format == "visage":
         if not args.volume_files:
             log.fatal(
-                "Input appears to be a Visage PR. For these files, you must pass the original volume with -v")
+                "Input appears to be a Visage PR. For these files, you must pass the original volume with -v"
+            )
             exit(1)
         in_volume = DicomVolume(maybe_glob(args.volume_files))
         annotations = readers.visage.read_annotations(in_volume, in_files[0])
@@ -105,46 +105,77 @@ def read(args: Any) -> None:
     print(k.encode(annotations))
 
 
-parser = argparse.ArgumentParser(
-    "dcmannotate", description="Command-line interface to dcmannotate.",
-    epilog="""Examples:
-    python -m dcmannotate read -i ./slice_sr.*.dcm
-    python -m dcmannotate read -i visage_pr.dcm -v slice.[0-9].dcm
-    """, formatter_class=argparse.RawTextHelpFormatter)
+def make_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        "dcmannotate",
+        description="Command-line interface to dcmannotate.",
+        epilog="""Examples:
+        python -m dcmannotate read -i ./slice_sr.*.dcm
+        python -m dcmannotate read -i visage_pr.dcm -v slice.[0-9].dcm
+        """,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
 
-parser.set_defaults(func=lambda x: log.info(parser.format_help()))
+    parser.set_defaults(func=lambda x: log.info(parser.format_help()))
 
-subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers()
 
-write_parser = subparsers.add_parser(
-    'write',
-    help="Write dicom annotations.")
-write_parser.add_argument(
-    'format', choices=['sr', 'sc', 'visage'],
-    help="Output format: Structured Report, Secondary Capture, or Visage")
-write_parser.add_argument(
-    '-i', '--volume-files', nargs='+', dest="volume_files", type=Path,
-    help="Input volume paths. Accepts a list or a glob pattern.")
-write_parser.add_argument(
-    '-o', dest='destination', required=True,
-    help="Output pattern or path, eg ./output/slice_annot.*.dcm or ./slice_visage.dcm")
-write_parser.add_argument(
-    '-a', '--annotations', nargs="?", dest='annotations',
-    help="Annotations in JSON format. Omit to read from stdin.")
-write_parser.set_defaults(func=write)
+    write_parser = subparsers.add_parser("write", help="Write dicom annotations.")
+    write_parser.add_argument(
+        "format",
+        choices=["sr", "sc", "visage"],
+        help="Output format: Structured Report, Secondary Capture, or Visage",
+    )
+    write_parser.add_argument(
+        "-i",
+        "--volume-files",
+        nargs="+",
+        dest="volume_files",
+        type=Path,
+        help="Input volume paths. Accepts a list or a glob pattern.",
+    )
+    write_parser.add_argument(
+        "-o",
+        dest="destination",
+        required=True,
+        help="Output pattern or path, eg ./output/slice_annot.*.dcm or ./slice_visage.dcm",
+    )
+    write_parser.add_argument(
+        "-a",
+        "--annotations",
+        nargs="?",
+        dest="annotations",
+        help="Annotations in JSON format. Omit to read from stdin.",
+    )
+    write_parser.set_defaults(func=write)
+
+    read_parser = subparsers.add_parser("read", help="Read dicom annotations.")
+    read_parser.add_argument(
+        "-i",
+        "--annotation-files",
+        nargs="+",
+        dest="annotation_files",
+        type=Path,
+        help="Annotation files to read. Accepts a list or a glob pattern.",
+    )
+    read_parser.add_argument(
+        "-v",
+        "--volume-files",
+        nargs="+",
+        dest="volume_files",
+        type=Path,
+        help="For Visage only: files corresponding to the referenced dicom volume. Accepts a list or a glob pattern.",
+    )
+
+    read_parser.set_defaults(func=read)
+    return parser
 
 
-read_parser = subparsers.add_parser(
-    'read',  help="Read dicom annotations.")
-read_parser.add_argument(
-    '-i', '--annotation-files', nargs='+', dest="annotation_files", type=Path,
-    help="Annotation files to read. Accepts a list or a glob pattern.")
-read_parser.add_argument(
-    '-v', '--volume-files', nargs='+', dest="volume_files", type=Path,
-    help="For Visage only: files corresponding to the referenced dicom volume. Accepts a list or a glob pattern.")
-
-read_parser.set_defaults(func=read)
-if __name__ == '__main__':
+def console_entry() -> None:
     log_config()
-    args = parser.parse_args()
+    args = make_parser().parse_args()
     args.func(args)  # call the default function
+
+
+if __name__ == "__main__":
+    console_entry()

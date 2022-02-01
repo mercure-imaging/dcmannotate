@@ -76,7 +76,8 @@ class DicomVolume:
             annotation_set = AnnotationSet(annotation_set)
         if not type(annotation_set) is AnnotationSet:
             raise ValueError(
-                f"Unexpected annotation_set, expected AnnotationSet or List[Annotations], received {type(annotation_set)}")
+                f"Unexpected annotation_set, expected AnnotationSet or List[Annotations], received {type(annotation_set)}"
+            )
         for a in annotation_set:
             if a.reference and a.reference.SeriesInstanceUID != self.SeriesInstanceUID:
                 raise ValueError(
@@ -86,8 +87,14 @@ class DicomVolume:
 
     def annotate_from(
         self,
-        datasets: Union[Dataset, "DicomVolume", Sequence[Union[Dataset, str, Path]], str, Path],
-        force: bool = False
+        datasets: Union[
+            Dataset,
+            "DicomVolume",
+            Sequence[Union[Dataset, str, Path]],
+            str,
+            Path,
+        ],
+        force: bool = False,
     ) -> None:
         """Annotate this dicom volume with annotations from the provided dicom files or Datasets.
 
@@ -119,8 +126,7 @@ class DicomVolume:
             json (str): json-encoded annotations.
             force (bool, optional): Replace existing annotations, if any. Defaults to False.
         """
-        self.annotate_with(
-            serialization.read_annotations_from_json(self, json), force)
+        self.annotate_with(serialization.read_annotations_from_json(self, json), force)
 
     def load(
         self,
@@ -233,7 +239,7 @@ class DicomVolume:
 
     def sort_by_z(self, datasets: List[Dataset]) -> List[Dataset]:
         """
-            Sort the given datasets along the orientation axis.
+        Sort the given datasets along the orientation axis.
         """
         orientation = datasets[0].ImageOrientationPatient  # These will all be identical
         # Doesn't matter which one you use, we are moving relative to it

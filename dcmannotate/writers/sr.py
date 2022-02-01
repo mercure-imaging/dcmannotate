@@ -11,9 +11,7 @@ from dcmannotate.annotations import Annotations, AnnotationSet
 
 
 env = Environment(
-    loader=FileSystemLoader(
-        Path(__file__).parent.parent.resolve() / "templates" / "tid1500"
-    ),
+    loader=FileSystemLoader(Path(__file__).parent.parent.resolve() / "templates" / "tid1500"),
     autoescape=True,
     undefined=StrictUndefined,
 )
@@ -36,9 +34,7 @@ def generate_slice_xml(annotations: Annotations, description: str) -> str:
     )
 
 
-def generate_dicoms(
-    aset: "AnnotationSet", pattern: Optional[str] = None
-) -> List[Path]:
+def generate_dicoms(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]:
     for k in aset:
         for measurement in k:
             if type(measurement.value) not in (int, float) and measurement.unit:
@@ -52,8 +48,7 @@ def generate_dicoms(
             frompath = annotations.reference.from_path
             outfile = str(frompath.with_name(frompath.stem + "_sr.dcm"))
         else:
-            outfile = pattern.replace(
-                "*", str(annotations.reference.z_index))
+            outfile = pattern.replace("*", str(annotations.reference.z_index))
         p = run(
             ["xml2dsr", "-", outfile],
             stdout=PIPE,
@@ -73,8 +68,7 @@ def generate_dicoms(
                 except Exception:
                     continue
                 if long_code_value == "CORNERSTONEFREETEXT":
-                    elem[0].add_new("CodeValue", "SH",
-                                    "CORNERSTONEFREETEXT")
+                    elem[0].add_new("CodeValue", "SH", "CORNERSTONEFREETEXT")
                     del elem[0][0x00080119]
                     # print(elem[0])
 

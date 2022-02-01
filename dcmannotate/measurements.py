@@ -20,8 +20,7 @@ class Measurement:
         self, unit: Optional[Union[str, Code]], value: Union[str, int, float]
     ) -> None:
         if type(value) is str and unit is not None:
-            raise TypeError(
-                "Measurements with units must have a numeric value.")
+            raise TypeError("Measurements with units must have a numeric value.")
 
         if unit:
             if isinstance(unit, Code):
@@ -37,7 +36,9 @@ class Measurement:
     # def from_dict(self, dict) -> Measurement:
     #     Measurement.__init__(self, dict["unit"], dict["value"])
 
-    def __json_serializable__(self) -> Dict[str, Union[Optional[str], int, float]]:
+    def __json_serializable__(
+        self,
+    ) -> Dict[str, Union[Optional[str], int, float]]:
         return dict(value=self.value, unit=self.unit.value if self.unit else None)
 
 
@@ -80,7 +81,12 @@ class Ellipse(Measurement):
     def __json_serializable__(self) -> Dict[str, Any]:
         return {
             **super().__json_serializable__(),
-            **dict(center_x=self.center.x, center_y=self.center.y, rx=self.rx, ry=self.ry),
+            **dict(
+                center_x=self.center.x,
+                center_y=self.center.y,
+                rx=self.rx,
+                ry=self.ry,
+            ),
         }
 
 

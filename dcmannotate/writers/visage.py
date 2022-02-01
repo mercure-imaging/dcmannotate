@@ -23,7 +23,12 @@ pydicom.datadict.add_private_dict_entries(
         0x00711062: ("OB", "1", "AnnotationData", "Annotation data"),
         0x00711064: ("OB", "1", "ViewsData", "Views data"),
         0x00711065: ("ST", "1", "ViewsDataVersion", "Views data version"),
-        0x00711066: ("OB", "1", "AnnotationReferences", "Annotation references"),
+        0x00711066: (
+            "OB",
+            "1",
+            "AnnotationReferences",
+            "Annotation references",
+        ),
     },
 )
 
@@ -72,24 +77,18 @@ def volume_hash(datasets: "DicomVolume") -> str:
     return m.hexdigest().upper()
 
 
-def generate(
-    dcm_volume: "DicomVolume", annotation_set: AnnotationSet
-) -> Dataset:
+def generate(dcm_volume: "DicomVolume", annotation_set: AnnotationSet) -> Dataset:
     ex = dcm_volume[0]
     # File meta info data elements
     file_meta = FileMetaDataset()
     file_meta.FileMetaInformationGroupLength = 202
     file_meta.FileMetaInformationVersion = b"\x00\x01"
-    file_meta.MediaStorageSOPClassUID = pydicom.uid.UID(
-        "1.2.840.10008.5.1.4.1.1.11.1"
-    )
+    file_meta.MediaStorageSOPClassUID = pydicom.uid.UID("1.2.840.10008.5.1.4.1.1.11.1")
     file_meta.MediaStorageSOPInstanceUID = pydicom.uid.generate_uid(
         prefix="1.2.276.0.45.1.7.4."
     )
     file_meta.TransferSyntaxUID = pydicom.uid.UID("1.2.840.10008.1.2.1")
-    file_meta.ImplementationClassUID = pydicom.uid.UID(
-        "1.2.276.0.45.1.1.0.71.20130122"
-    )
+    file_meta.ImplementationClassUID = pydicom.uid.UID("1.2.276.0.45.1.1.0.71.20130122")
     file_meta.ImplementationVersionName = "DicomWeb_71"
 
     dt = datetime.now()
@@ -122,8 +121,7 @@ def generate(
     ds.SoftwareVersions = "7.1.16 (Build 3355)"  # TODO
     ds.PatientPosition = ex.get("PatientPosition") or ""
     ds.StudyInstanceUID = ex.StudyInstanceUID
-    ds.SeriesInstanceUID = pydicom.uid.generate_uid(
-        prefix="1.2.276.0.45.1.7.3.")
+    ds.SeriesInstanceUID = pydicom.uid.generate_uid(prefix="1.2.276.0.45.1.7.3.")
     ds.StudyID = ex.StudyID
     ds.SeriesNumber = "9950"  # TODO
     ds.InstanceNumber = "1"
@@ -136,9 +134,7 @@ def generate(
     ds.PresentationCreationTime = ds.InstanceCreationTime
     ds.ContentCreatorName = ""
     ds.PresentationLUTShape = "IDENTITY"
-    file_meta.ImplementationClassUID = pydicom.uid.UID(
-        "1.2.276.0.7230010.3.0.3.6.2"
-    )
+    file_meta.ImplementationClassUID = pydicom.uid.UID("1.2.276.0.7230010.3.0.3.6.2")
     file_meta.ImplementationVersionName = "OFFIS_DCMTK_362"
     ds.file_meta = file_meta
     ds.is_implicit_VR = False
@@ -161,25 +157,18 @@ def generate(
         refd_image.ReferencedSOPClassUID = r.SOPClassUID
         refd_image.ReferencedSOPInstanceUID = r.SOPInstanceUID
         if first:
-            refd_image[(0x71, 0x10)] = pydicom.DataElement(
-                (0x71, 0x10), "LO", "Visage"
-            )
+            refd_image[(0x71, 0x10)] = pydicom.DataElement((0x71, 0x10), "LO", "Visage")
             refd_image[(0x71, 0x1061)] = pydicom.DataElement(
                 (0x71, 0x1061), "UT", volume_hash(dcm_volume)
             )
             refd_image[(0x71, 0x1062)] = pydicom.DataElement(
-                (0x71, 0x1062), "OB", encode(
-                    render_xml(annotation_set))
+                (0x71, 0x1062), "OB", encode(render_xml(annotation_set))
             )
-            refd_image[(0x71, 0x1063)] = pydicom.DataElement(
-                (0x71, 0x1063), "ST", "1.0.0.0"
-            )
+            refd_image[(0x71, 0x1063)] = pydicom.DataElement((0x71, 0x1063), "ST", "1.0.0.0")
             # these aren't necessary
             # refd_image[(0x71, 0x1064)] = pydicom.DataElement(
             #     (0x71, 0x1064), 'OB', self.encode(self.key_views.render(datasets=dcm_series)))
-            refd_image[(0x71, 0x1065)] = pydicom.DataElement(
-                (0x71, 0x1065), "ST", "0.1.0.0"
-            )
+            refd_image[(0x71, 0x1065)] = pydicom.DataElement((0x71, 0x1065), "ST", "0.1.0.0")
 
             ref_sequence = pydicom.Sequence()
             for r in dcm_volume:

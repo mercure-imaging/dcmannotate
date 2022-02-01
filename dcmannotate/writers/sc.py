@@ -1,7 +1,7 @@
 import math
 import numpy as np  # type: ignore
 from PIL import Image, ImageDraw, ImageFont  # type: ignore
-from typing import Any, List,  Sequence
+from typing import Any, List, Sequence
 
 from pydicom.dataset import Dataset
 
@@ -9,6 +9,7 @@ import highdicom as hd
 from highdicom.sc.sop import SCImage
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume
 
@@ -72,9 +73,7 @@ def sc_from_ref(reference_dataset: Dataset, pixel_array: Any) -> SCImage:
         instance_number=getattr(reference_dataset, "InstanceNumber", 0),
         manufacturer="Manufacturer",
         pixel_spacing=getattr(reference_dataset, "PixelSpacing", None),
-        patient_orientation=getattr(
-            reference_dataset, "PatientOrientation", ("L", "P")
-        ),
+        patient_orientation=getattr(reference_dataset, "PatientOrientation", ("L", "P")),
     )
     sc.ImageOrientationPatient = reference_dataset.ImageOrientationPatient
     sc.SpacingBetweenSlices = reference_dataset.SpacingBetweenSlices
@@ -105,8 +104,7 @@ def generate(
         annotations = None
         if slice.SOPInstanceUID in annotation_set:
             annotations = annotation_set[slice.SOPInstanceUID]
-            pixels = generate_pixels(
-                annotations, window)
+            pixels = generate_pixels(annotations, window)
         else:
             pixels = window_image(slice, window)
 
@@ -185,15 +183,17 @@ def generate_pixels(annotations: Annotations, window: List[int]) -> Any:
             text_offset[1] = -11
 
         if start_point.x + text_size[0] > pil_image.width:
-            text_offset[0] = pil_image.width - \
-                (start_point.x + text_size[0])
+            text_offset[0] = pil_image.width - (start_point.x + text_size[0])
 
-        arrowedLine(
-            draw_obj, Point(start_point.x, start_point.y), arrow, width=2
-        )
+        arrowedLine(draw_obj, Point(start_point.x, start_point.y), arrow, width=2)
         arrow_text_to_draw.append(
-            ((start_point.x + text_offset[0],
-                start_point.y + text_offset[1]), text)
+            (
+                (
+                    start_point.x + text_offset[0],
+                    start_point.y + text_offset[1],
+                ),
+                text,
+            )
         )
 
     for ellipse in ellipses:
@@ -201,8 +201,10 @@ def generate_pixels(annotations: Annotations, window: List[int]) -> Any:
         if ellipse.unit:
             text += f" {ellipse.unit.value}"
         text_size = draw_obj.textsize(text)
-        text_loc = [int(ellipse.right.x) + 3,
-                    int(ellipse.top.y - text_size[1] / 2)]
+        text_loc = [
+            int(ellipse.right.x) + 3,
+            int(ellipse.top.y - text_size[1] / 2),
+        ]
         flip_x = 1
         flip_y = 1
 
@@ -216,10 +218,8 @@ def generate_pixels(annotations: Annotations, window: List[int]) -> Any:
 
         a = ellipse.rx
         b = ellipse.ry
-        x = (math.sqrt(2) * a ** (1.5) * b ** (1.5) + a ** 3 - a ** 2 * b) / (
-            a ** 2 + b ** 2
-        )
-        y = b * math.sqrt(1 - x ** 2 / a ** 2)
+        x = (math.sqrt(2) * a ** (1.5) * b ** (1.5) + a**3 - a**2 * b) / (a**2 + b**2)
+        y = b * math.sqrt(1 - x**2 / a**2)
         draw_obj.line(
             (
                 (flip_x * x + ellipse.center.x, -flip_y * y + ellipse.center.y),
