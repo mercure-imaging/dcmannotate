@@ -7,3 +7,7 @@
 venv/
 .mypy_cache/
 dist/
+working_dir/
+.vscode/launch.json
+.coverage
+cov.xml
