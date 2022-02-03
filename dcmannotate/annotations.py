@@ -109,7 +109,9 @@ class AnnotationSet:
 
     def __init__(self, annotations_list: List[Annotations]):
         self.__annotations: Dict[Any, Annotations] = {}
-        self.__list = sorted(annotations_list, key=lambda x: x.reference.z_index)
+        self.__list = sorted(
+            annotations_list, key=lambda x: x.reference.z_index  # type: ignore
+        )
         series_uid = annotations_list[0].reference.SeriesInstanceUID
         for set_ in annotations_list:
             if set_.reference is None:

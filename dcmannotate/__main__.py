@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional, Sequence, Union
 
 import pydicom
 
@@ -175,14 +175,16 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def console_entry(argin: Optional[Sequence[str]] = None) -> None:
+def console_entry(argin: Optional[Sequence[str]] = None) -> Union[str, List[Path]]:
     log_config()
     p = make_parser()
     if argin is not None:
         args = p.parse_args(argin)
     else:
         args = p.parse_args()
-    return args.func(args)  # call the default function
+    result = args.func(args)  # call the default function
+    assert isinstance(result, (str, list))
+    return result
 
 
 if __name__ == "__main__":
