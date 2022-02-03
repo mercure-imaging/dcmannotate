@@ -208,7 +208,9 @@ class DicomVolume:
         self.make_visage().save_as(filepath)
         return Path(filepath)
 
-    def save_as(self, pattern: Union[str, PathLike]) -> List[Path]:
+    def save_as(
+        self, pattern: Union[str, PathLike], *, force: Optional[bool] = False
+    ) -> List[Path]:
         """Write out this volume to files, slice by slice.
 
         Args:
@@ -217,14 +219,21 @@ class DicomVolume:
         Returns:
             List[Path]: The created files.
         """
+
         pattern = str(pattern)
         if "*" not in pattern:
             raise Exception("Pattern must include a '*' wildcard.")
-        files = []
-        for sc in self.__datasets:
-            filename = pattern.replace("*", f"{sc.z_index:03}")
+        files = [Path(pattern.replace("*", f"{sc.z_index:03}")) for sc in self.__datasets]
+
+        if not force:
+            for f in files:
+                if f.exists():
+                    raise FileExistsError(
+                        f"{f} already exists, aborting with no files written. Pass force=True to overwrite."
+                    )
+        for sc, filename in zip(self.__datasets, files):
             sc.save_as(filename)
-            files.append(Path(filename))
+        self.files = files
         return files
 
     def sort_by_z(self, datasets: List[Dataset]) -> List[Dataset]:
