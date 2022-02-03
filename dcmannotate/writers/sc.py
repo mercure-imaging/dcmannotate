@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont  # type: ignore
 from pydicom.dataset import Dataset
 
 if TYPE_CHECKING:  # avoid circular import
-    from dcmannotate.dicomvolume import DicomVolume
+    from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 
 from dcmannotate.annotations import Annotations, AnnotationSet
 from dcmannotate.measurements import Point, PointMeasurement

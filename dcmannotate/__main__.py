@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional, Sequence
 
 import pydicom
 
@@ -35,7 +35,7 @@ def log_config() -> logging.Logger:
     return log
 
 
-def write(args: Any) -> None:
+def write(args: Any) -> List[Path]:
     in_files = maybe_glob(args.volume_files)
     volume = DicomVolume(in_files)
 
@@ -47,14 +47,16 @@ def write(args: Any) -> None:
     volume.annotate_with(annotation_set)
 
     if args.format == "sc":
-        volume.write_sc(args.destination)
+        result_files = volume.write_sc(args.destination)
     elif args.format == "sr":
-        volume.write_sr(args.destination)
+        result_files = volume.write_sr(args.destination)
     elif args.format == "visage":
-        volume.write_visage(args.destination)
+        result_files = [volume.write_visage(args.destination)]
     else:
         log.error(f"Unsupported format {args.format}")
         exit(1)
+    log.info(f"Wrote {len(result_files)} files.")
+    return result_files
 
 
 def maybe_glob(path_list: List[Path]) -> List[Path]:
@@ -68,7 +70,7 @@ def maybe_glob(path_list: List[Path]) -> List[Path]:
         return list(Path(".").glob(str(path)))
 
 
-def read(args: Any) -> None:
+def read(args: Any) -> str:
     if not args.annotation_files:
         log.fatal("No annotation files provided.")
         exit(1)
@@ -102,7 +104,9 @@ def read(args: Any) -> None:
         in_volume = DicomVolume(maybe_glob(args.volume_files))
         annotations = readers.visage.read_annotations(in_volume, in_files[0])
     k = AnnotationEncoder()
-    print(k.encode(annotations))
+    result = k.encode(annotations)
+    print(result)
+    return result
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -171,10 +175,14 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def console_entry() -> None:
+def console_entry(argin: Optional[Sequence[str]] = None) -> None:
     log_config()
-    args = make_parser().parse_args()
-    args.func(args)  # call the default function
+    p = make_parser()
+    if argin is not None:
+        args = p.parse_args(argin)
+    else:
+        args = p.parse_args()
+    return args.func(args)  # call the default function
 
 
 if __name__ == "__main__":

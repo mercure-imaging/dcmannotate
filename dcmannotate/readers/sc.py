@@ -8,7 +8,7 @@ from pydicom.dataset import Dataset
 from dcmannotate.annotations import AnnotationSet, AnnotationsParsed
 
 if TYPE_CHECKING:  # avoid circular import
-    from dcmannotate.dicomvolume import DicomVolume
+    from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 from dcmannotate.serialization import AnnotationDecoder
 
 pydicom.datadict.add_private_dict_entries(

@@ -11,7 +11,7 @@ from dcmannotate import Ellipse, Point, PointMeasurement
 from dcmannotate.annotations import Annotations, AnnotationSet
 
 if TYPE_CHECKING:  # avoid circular import
-    from dcmannotate.dicomvolume import DicomVolume
+    from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 from defusedxml.ElementTree import fromstring as xml_from_string  # type: ignore
 
 from dcmannotate.measurements import Measurement
@@ -68,9 +68,9 @@ def get_measurements(dataset: Union[Dataset, str, Path]) -> Dict[str, List[Measu
 
 def read_annotations(
     volume: "DicomVolume",
-    visage_files: Union[Dataset, str, Path],
+    visage_file: Union[Dataset, str, Path],
 ) -> AnnotationSet:
-    measurement_sets = get_measurements(visage_files)
+    measurement_sets = get_measurements(visage_file)
     annotations = []
     for sop_uid, measurements in measurement_sets.items():
         if len(measurements) == 0:

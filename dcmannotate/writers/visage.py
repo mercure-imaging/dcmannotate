@@ -15,7 +15,7 @@ from pydicom.uid import generate_uid
 from dcmannotate.annotations import AnnotationSet
 
 if TYPE_CHECKING:
-    from dcmannotate.dicomvolume import DicomVolume
+    from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 
 pydicom.datadict.add_private_dict_entries(
     "Visage",

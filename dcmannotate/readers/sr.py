@@ -11,7 +11,7 @@ from dcmannotate import Ellipse, Point, PointMeasurement
 from dcmannotate.annotations import Annotations, AnnotationSet
 
 if TYPE_CHECKING:  # avoid circular import
-    from dcmannotate.dicomvolume import DicomVolume
+    from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 from dcmannotate.measurements import Measurement
 
 
