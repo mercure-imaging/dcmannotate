@@ -158,7 +158,9 @@ class DicomVolume:
         finally:
             pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
 
-    def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
+    def write_sc(
+        self, pattern: Union[str, Path], *, force: Optional[bool] = False
+    ) -> List[Path]:
         """Write out attached annotations as Dicom Secondary Capture files.
 
         Args:
@@ -168,7 +170,7 @@ class DicomVolume:
             List[Path]: A list of the created files.
         """
 
-        return self.make_sc().save_as(pattern)
+        return self.make_sc().save_as(pattern, force=force)
 
     def make_sr(self) -> List[Dataset]:
         """Generate Dicom Structured Report datasets from attached annotations.
@@ -180,7 +182,9 @@ class DicomVolume:
             files = self.write_sr(dir + "/" + "slice.*.dcm")
             return [dcmread(f) for f in files]
 
-    def write_sr(self, pattern: Optional[str] = None) -> List[Path]:
+    def write_sr(
+        self, pattern: Optional[str] = None, *, force: Optional[bool] = False
+    ) -> List[Path]:
         """Write out Dicom Structured Reports.
 
         Args:
@@ -197,7 +201,7 @@ class DicomVolume:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
-        return writers.sr.generate(self.annotation_set, pattern)
+        return writers.sr.generate(self.annotation_set, pattern, force=force)
 
     def make_visage(self) -> Dataset:
         """Generate Visage PR dataset from attached annotations.
@@ -211,7 +215,9 @@ class DicomVolume:
 
         return writers.visage.generate(self, self.annotation_set)
 
-    def write_visage(self, filepath: Union[str, Path]) -> Path:
+    def write_visage(
+        self, filepath: Union[str, Path], *, force: Optional[bool] = False
+    ) -> Path:
         """Write out Visage PR file.
 
         Args:
@@ -220,6 +226,11 @@ class DicomVolume:
         Returns:
             Path: The created file.
         """
+        if Path(filepath).exists() and not force:
+            raise FileExistsError(
+                f"{filepath} already exists, aborting with no files written. Pass force=True to overwrite."
+            )
+
         self.make_visage().save_as(filepath)
         return Path(filepath)
 

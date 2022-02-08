@@ -36,12 +36,16 @@ a_slice_3 = Annotations([Ellipse(Point(128, 276), 30, 30, "Millimeter", 1)], vol
 a_slice_4 = Annotations([Ellipse(Point(128, 296), 40, 40, "Millimeter", 1)], volume[3])
 
 aset = AnnotationSet([a_slice_1, a_slice_2, a_slice_3, a_slice_4])
+# '{"fname": "/foo/bar"}'
 volume.annotate_with(aset)
 
 print("Writing SR files... ", end="")
-print(volume.write_sr())
+print(volume.write_sr(force=True))
 print("Writing SC files... ", end="")
-print(volume.write_sc(demo_path / "demo_slice_*_sc.dcm"))
+print(volume.write_sc(demo_path / "demo_slice_*_sc.dcm", force=True))
 print("Writing Visage file... ", end="")
-print(volume.write_visage(demo_path / "demo_result_visage.dcm"))
+print(volume.write_visage(demo_path / "demo_result_visage.dcm", force=True))
 print(f"Complete. Files written to {demo_path.absolute()}")
+
+# volume.annotate_from(list(demo_path.glob("demo_slice_*_sc.dcm")), force=True)
+# volume.annotate_from(dcmread(demo_path / "demo_result_visage.dcm"), force=True)

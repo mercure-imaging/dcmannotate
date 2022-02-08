@@ -1,5 +1,5 @@
 import math
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Union, TypeVar
 
 PointType = TypeVar("PointType", int, float)
 
@@ -8,25 +8,25 @@ class GenericPoint(Generic[PointType]):
     _x: PointType
     _y: PointType
 
-    def __init__(self, x: PointType, y: PointType):
-        self.x = x
-        self.y = y
-
     @property
     def x(self) -> PointType:
         return self._x
+
+    @x.setter
+    def x(self, x: PointType) -> None:
+        self._x = x
 
     @property
     def y(self) -> PointType:
         return self._y
 
-    @x.setter
-    def x(self, x):
-        self._x = x
-
     @y.setter
-    def y(self, y):
+    def y(self, y: PointType) -> None:
         self._y = y
+
+    def __init__(self, x: PointType, y: PointType):
+        self.x = x
+        self.y = y
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, GenericPoint):
@@ -53,28 +53,40 @@ class GenericPoint(Generic[PointType]):
 
 
 class Point(GenericPoint[float]):
+    @property
+    def x(self) -> float:
+        return super().x
+
     @GenericPoint.x.setter
-    def x(self, x) -> float:
-        # if float(x) != x:
-        #     raise TypeError("Points must have integer coordinates.")
+    def x(self, x: Union[int, float]) -> None:
         self._x = float(x)
 
+    @property
+    def y(self) -> float:
+        return super().y
+
     @GenericPoint.y.setter
-    def y(self, y) -> float:
-        # if int(y) != y:
-        #     raise TypeError("Points must have integer coordinates.")
+    def y(self, y: Union[int, float]) -> None:
         self._y = float(y)
 
 
 class PointInt(GenericPoint[int]):
+    @property
+    def x(self) -> int:
+        return super().x
+
     @GenericPoint.x.setter
-    def x(self, x) -> int:
+    def x(self, x: Union[int, float]) -> None:
         if int(x) != x:
             raise TypeError("Points must have integer coordinates.")
         self._x = int(x)
 
+    @property
+    def y(self) -> int:
+        return super().y
+
     @GenericPoint.y.setter
-    def y(self, y) -> int:
+    def y(self, y: Union[int, float]) -> None:
         if int(y) != y:
             raise TypeError("Points must have integer coordinates.")
         self._y = int(y)

@@ -1,5 +1,3 @@
-import math
-from collections import namedtuple
 from typing import Any, Dict, Optional, Union
 
 from pydicom.sr.codedict import codes
@@ -40,32 +38,32 @@ class Measurement:
 
 
 class Ellipse(Measurement):
-    rx: int
-    ry: int
+    rx: float
+    ry: float
     center: Point
 
     @property
-    def top(self):  # self.top = Point(c.x, c.y - ry)
+    def top(self) -> Point:  # self.top = Point(c.x, c.y - ry)
         return Point(self.center.x, self.center.y - self.ry)
 
     @property
-    def bottom(self):  # self.bottom = Point(c.x, c.y + ry)
+    def bottom(self) -> Point:  # self.bottom = Point(c.x, c.y + ry)
         return Point(self.center.x, self.center.y + self.ry)
 
     @property
-    def left(self):  # self.left = Point(c.x - rx, c.y)
+    def left(self) -> Point:  # self.left = Point(c.x - rx, c.y)
         return Point(self.center.x - self.rx, self.center.y)
 
     @property
-    def right(self):  # self.right = Point(c.x + rx, c.y)
+    def right(self) -> Point:  # self.right = Point(c.x + rx, c.y)
         return Point(self.center.x + self.rx, self.center.y)
 
     @property
-    def topleft(self):  # self.topleft = Point(c.x - rx, c.y - ry)
+    def topleft(self) -> Point:  # self.topleft = Point(c.x - rx, c.y - ry)
         return Point(self.center.x - self.rx, self.center.y - self.ry)
 
     @property
-    def bottomright(self):  # self.bottomright = Point(c.x + rx, c.y + ry)
+    def bottomright(self) -> Point:  # self.bottomright = Point(c.x + rx, c.y + ry)
         return Point(self.center.x + self.rx, self.center.y + self.ry)
 
     def __init__(
@@ -115,25 +113,25 @@ class PointMeasurement(Measurement):
     __point: Point
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self.__point.x
 
-    @property
-    def y(self):
-        return self.__point.y
-
     @x.setter
-    def x(self, x):
+    def x(self, x: Union[int, float]) -> None:
         self.__point.x = x
 
+    @property
+    def y(self) -> float:
+        return self.__point.y
+
     @y.setter
-    def y(self, y):
+    def y(self, y: Union[int, float]) -> None:
         self.__point.y = y
 
     def __init__(
         self,
-        x: int,
-        y: int,
+        x: Union[int, float],
+        y: Union[int, float],
         unit: Optional[Union[str, Code]],
         value: Union[str, int, float],
     ):

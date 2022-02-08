@@ -38,7 +38,9 @@ def generate_xml(aset: AnnotationSet) -> List[str]:
     return [generate_slice_xml(a, "") for a in aset]
 
 
-def generate(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]:
+def generate(
+    aset: "AnnotationSet", pattern: Optional[str] = None, *, force: Optional[bool] = False
+) -> List[Path]:
     for k in aset:
         for measurement in k:
             if type(measurement.value) not in (int, float) and measurement.unit:
@@ -47,14 +49,23 @@ def generate(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]
                 )
     xml_docs = generate_xml(aset)
     outfiles = []
-    for annotations, xml in zip(aset, xml_docs):
+
+    for annotations in aset:
         if pattern is None:
             frompath = annotations.reference.from_path
-            outfile = str(frompath.with_name(frompath.stem + "_sr.dcm"))
+            outfile = frompath.with_name(frompath.stem + "_sr.dcm")
         else:
-            outfile = pattern.replace("*", str(annotations.reference.z_index))
+            outfile = Path(pattern.replace("*", str(annotations.reference.z_index)))
+        if outfile.exists() and not force:
+            raise FileExistsError(
+                f"{outfile} already exists, aborting with no files written. Pass force=True to overwrite."
+            )
+        outfiles.append(Path(outfile))
+
+    for outfile, xml in zip(outfiles, xml_docs):
+
         p = run(
-            ["xml2dsr", "-", outfile],
+            ["xml2dsr", "-", str(outfile)],
             stdout=PIPE,
             stderr=PIPE,
             input=xml,
@@ -78,5 +89,4 @@ def generate(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]
 
         d.save_as(outfile)
 
-        outfiles.append(Path(outfile))
     return outfiles
