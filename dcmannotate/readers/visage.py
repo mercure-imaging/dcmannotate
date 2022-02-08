@@ -7,8 +7,9 @@ import pydicom
 from pydicom.dataset import Dataset
 from pydicom.sr.codedict import codes
 
-from dcmannotate import Ellipse, Point, PointMeasurement
+from dcmannotate import Ellipse, PointMeasurement
 from dcmannotate.annotations import Annotations, AnnotationSet
+from dcmannotate.utils import Point
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
@@ -48,7 +49,7 @@ def get_measurements(dataset: Union[Dataset, str, Path]) -> Dict[str, List[Measu
     for measurement in xml_data:
         meas_type = measurement.tag
         origin = measurement.find("./coordinate_system/origin").text.split(" ")
-        x, y = map(int, origin[0:2])
+        x, y = map(float, origin[0:2])
         z = float(origin[2])
         z_idx = int(z - 0.5)
         label = measurement.find("./label").text
@@ -63,8 +64,8 @@ def get_measurements(dataset: Union[Dataset, str, Path]) -> Dict[str, List[Measu
             value = float(value_str)
 
         if meas_type == "ellipse":
-            rx = int(measurement.find("./geometry/radius_x").text)
-            ry = int(measurement.find("./geometry/radius_y").text)
+            rx = float(measurement.find("./geometry/radius_x").text)
+            ry = float(measurement.find("./geometry/radius_y").text)
             measurement = Ellipse(Point(x, y), rx, ry, unit_code, value)
         elif meas_type == "text":
             measurement = PointMeasurement(x, y, unit_code, value)

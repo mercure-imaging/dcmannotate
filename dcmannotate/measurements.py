@@ -1,3 +1,4 @@
+import math
 from collections import namedtuple
 from typing import Any, Dict, Optional, Union
 
@@ -5,7 +6,7 @@ from pydicom.sr.codedict import codes
 
 from pydicom.sr.coding import Code
 
-Point = namedtuple("Point", ["x", "y"])
+from .utils import Point
 
 
 class Measurement:
@@ -25,12 +26,12 @@ class Measurement:
                 for u in dir(codes.UCUM):
                     if u.lower() == unit.lower():
                         self.unit = getattr(codes.UCUM, u)
+                        break
+                else:
+                    raise ValueError(f"Unknown UCUM unit {unit}.")
         else:
             self.unit = None
         self.value = value
-
-    # def from_dict(self, dict) -> Measurement:
-    #     Measurement.__init__(self, dict["unit"], dict["value"])
 
     def __json_serializable__(
         self,
@@ -39,24 +40,48 @@ class Measurement:
 
 
 class Ellipse(Measurement):
+    rx: int
+    ry: int
+    center: Point
+
+    @property
+    def top(self):  # self.top = Point(c.x, c.y - ry)
+        return Point(self.center.x, self.center.y - self.ry)
+
+    @property
+    def bottom(self):  # self.bottom = Point(c.x, c.y + ry)
+        return Point(self.center.x, self.center.y + self.ry)
+
+    @property
+    def left(self):  # self.left = Point(c.x - rx, c.y)
+        return Point(self.center.x - self.rx, self.center.y)
+
+    @property
+    def right(self):  # self.right = Point(c.x + rx, c.y)
+        return Point(self.center.x + self.rx, self.center.y)
+
+    @property
+    def topleft(self):  # self.topleft = Point(c.x - rx, c.y - ry)
+        return Point(self.center.x - self.rx, self.center.y - self.ry)
+
+    @property
+    def bottomright(self):  # self.bottomright = Point(c.x + rx, c.y + ry)
+        return Point(self.center.x + self.rx, self.center.y + self.ry)
+
     def __init__(
         self,
         c: Point,
-        rx: int,
-        ry: int,
+        rx: float,
+        ry: float,
         unit: Optional[Union[str, Code]],
         value: Union[str, int, float],
     ):
         super().__init__(unit, value)
         self.center = c
-        self.rx = rx
-        self.ry = ry
-        self.top = Point(c.x, c.y - ry)
-        self.bottom = Point(c.x, c.y + ry)
-        self.left = Point(c.x - rx, c.y)
-        self.right = Point(c.x + rx, c.y)
-        self.topleft = Point(c.x - rx, c.y - ry)
-        self.bottomright = Point(c.x + rx, c.y + ry)
+        # if not (rx == int(rx) and ry == int(ry)):
+        #     raise TypeError("Ellipse radii must be integers.")
+        self.rx = float(rx)
+        self.ry = float(ry)
 
     def __repr__(self) -> str:
         return f"Ellipse<{self.center}, {self.rx}x{self.ry}>({self.value} {self.unit.value if self.unit else ''})"
@@ -87,6 +112,24 @@ class Ellipse(Measurement):
 
 
 class PointMeasurement(Measurement):
+    __point: Point
+
+    @property
+    def x(self):
+        return self.__point.x
+
+    @property
+    def y(self):
+        return self.__point.y
+
+    @x.setter
+    def x(self, x):
+        self.__point.x = x
+
+    @y.setter
+    def y(self, y):
+        self.__point.y = y
+
     def __init__(
         self,
         x: int,
@@ -95,8 +138,7 @@ class PointMeasurement(Measurement):
         value: Union[str, int, float],
     ):
         super().__init__(unit, value)
-        self.x = x
-        self.y = y
+        self.__point = Point(x, y)
 
     def __add__(self, other: Union["PointMeasurement", Point]) -> "PointMeasurement":
         return PointMeasurement(

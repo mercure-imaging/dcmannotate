@@ -13,8 +13,9 @@ if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
 
 from dcmannotate.annotations import Annotations, AnnotationSet
-from dcmannotate.measurements import Point, PointMeasurement
+from dcmannotate.measurements import PointMeasurement
 from dcmannotate.serialization import AnnotationEncoder
+from dcmannotate.utils import Point, Vector
 
 
 def arrowedLine(
@@ -26,19 +27,11 @@ def arrowedLine(
 ) -> None:
     """Draw line from ptA to ptB with arrowhead at ptB"""
     # Get drawing context
-
-    # Now work out the arrowhead
-    # = it will be a triangle with one vertex at ptB
-    # - it will start at 95% of the length of the line
-    # - it will extend 8 pixels either side of the line
-    # x0, y0 = (ptA.x, ptA.y)
     x1, y1 = (ptB.x, ptB.y)
     # Now we can work out the x,y coordinates of the bottom of the arrowhead triangle
 
     # generate a normalized vector from A to B
-    vec = (ptB.x - ptA.x, ptB.y - ptA.y)
-    vec_len = math.sqrt(sum(x * x for x in vec))
-    vec = Point(vec[0] / vec_len, vec[1] / vec_len)
+    vec = Vector(ptB.x - ptA.x, ptB.y - ptA.y).normed()
 
     xb = x1 - vec.x * 8
     yb = y1 - vec.y * 8

@@ -3,7 +3,8 @@ from json import JSONDecoder, JSONEncoder
 from typing import Any, Dict, List, TYPE_CHECKING, Union
 
 from .annotations import AnnotationSet, AnnotationSetParsed, AnnotationsParsed
-from .measurements import Ellipse, Measurement, Point, PointMeasurement
+from .measurements import Ellipse, Measurement, PointMeasurement
+from .utils import Point
 
 if TYPE_CHECKING:
     from .dicomvolume import DicomVolume

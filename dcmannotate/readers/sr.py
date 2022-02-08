@@ -7,8 +7,9 @@ from pydicom.dataset import Dataset
 from pydicom.sr.codedict import _CodesDict, codes
 from pydicom.sr.coding import Code
 
-from dcmannotate import Ellipse, Point, PointMeasurement
+from dcmannotate import Ellipse, PointMeasurement
 from dcmannotate.annotations import Annotations, AnnotationSet
+from dcmannotate.utils import Point
 
 if TYPE_CHECKING:  # avoid circular import
     from dcmannotate.dicomvolume import DicomVolume  # pragma: no cover
