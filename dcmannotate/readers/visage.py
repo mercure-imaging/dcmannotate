@@ -22,6 +22,14 @@ def decode(t: bytes) -> str:
 
 
 def get_measurements(dataset: Union[Dataset, str, Path]) -> Dict[str, List[Measurement]]:
+    """Retrieves measurements from this Visage dataset.
+
+    Args:
+        dataset (Union[Dataset, str, Path]): The dataset or a path to it
+
+    Returns:
+        Dict[str, List[Measurement]]: A dict with measurements keyed by ReferencedSOPInstanceUID
+    """
     ds: Dataset
     if isinstance(dataset, (str, PathLike)):
         ds = pydicom.dcmread(dataset)
@@ -70,6 +78,14 @@ def read_annotations(
     volume: "DicomVolume",
     visage_file: Union[Dataset, str, Path],
 ) -> AnnotationSet:
+    """Read annotations in and verify that they reference the volume.
+
+    Args:
+        volume (DicomVolume): The volume being annotated
+        sr_files (Dataset | str | Path): The annotation file.
+
+    Returns: AnnotationSet
+    """
     measurement_sets = get_measurements(visage_file)
     annotations = []
     for sop_uid, measurements in measurement_sets.items():

@@ -16,6 +16,18 @@ from dcmannotate.measurements import Measurement
 
 
 def find_value_type(ds: Dataset, type: str) -> Dataset:
+    """Iterate through a dataset with a ContentSequence to find a tag with the given ValueType.
+
+    Args:
+        ds (Dataset): Input dataset
+        type (str): The ValueType we are looking for.
+
+    Raises:
+        ValueError: If we didn't find it.
+
+    Returns:
+        Dataset: The tag we found.
+    """
     for k in ds.ContentSequence:
         if k.ValueType == type:
             assert isinstance(k, Dataset)
@@ -24,6 +36,7 @@ def find_value_type(ds: Dataset, type: str) -> Dataset:
 
 
 def find_content_items(sr: Dataset, code: Code) -> List[Dataset]:
+    """Recursively hunt through a dataset to find content items with a particular code."""
     found_items = []
     for k in sr.ContentSequence:
         if (
@@ -37,6 +50,14 @@ def find_content_items(sr: Dataset, code: Code) -> List[Dataset]:
 
 
 def get_measurements(dataset: Union[Dataset, str, Path]) -> Tuple[List[Measurement], str]:
+    """Retrieves measurements from this SR dataset.
+
+    Args:
+        dataset (Union[Dataset, str, Path]): The dataset or a path to it
+
+    Returns:
+        Tuple[List[Measurement], str]: A list of measurements and the ReferencedSOPInstanceUID.
+    """
     assert type(codes.DCM) is _CodesDict
 
     ds: Dataset
@@ -87,6 +108,14 @@ def read_annotations(
     volume: Union["DicomVolume", Sequence[Dataset]],
     sr_files: Sequence[Union[Dataset, str, Path]],
 ) -> AnnotationSet:
+    """Read annotations in and verify that they reference the volume.
+
+    Args:
+        volume (DicomVolume): The volume being annotated
+        sr_files (Sequence[Dataset | str | Path]): The annotation files.
+
+    Returns: AnnotationSet
+    """
     assert len(sr_files) > 0
     annotations = []
     for f in sr_files:

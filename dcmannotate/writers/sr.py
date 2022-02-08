@@ -34,7 +34,11 @@ def generate_slice_xml(annotations: Annotations, description: str) -> str:
     )
 
 
-def generate_dicoms(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]:
+def generate_xml(aset: AnnotationSet) -> List[str]:
+    return [generate_slice_xml(a, "") for a in aset]
+
+
+def generate(aset: "AnnotationSet", pattern: Optional[str] = None) -> List[Path]:
     for k in aset:
         for measurement in k:
             if type(measurement.value) not in (int, float) and measurement.unit:
@@ -76,7 +80,3 @@ def generate_dicoms(aset: "AnnotationSet", pattern: Optional[str] = None) -> Lis
 
         outfiles.append(Path(outfile))
     return outfiles
-
-
-def generate_xml(aset: AnnotationSet) -> List[str]:
-    return [generate_slice_xml(a, "") for a in aset]

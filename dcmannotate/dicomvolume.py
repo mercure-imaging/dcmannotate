@@ -42,7 +42,7 @@ class DicomVolume:
         annotations: Optional["AnnotationSet"] = None,
         read_pixels: bool = True,
     ) -> None:
-        self.load(datasets, read_pixels)
+        self.__load(datasets, read_pixels)
         self.annotation_set = annotations
 
     def annotate_with(
@@ -118,29 +118,33 @@ class DicomVolume:
         """
         self.annotate_with(serialization.read_annotations_from_json(self, json), force)
 
-    def load(
+    def __load(
         self,
         param: Union[Sequence[Dataset], Sequence[PathLike]],
         read_pixels: bool = True,
     ) -> None:
-        if isinstance(param, list) and isinstance(param[0], Dataset):
-            self._load_dsets(param)
-            return
+        """Loads datasets from file paths if necessary.
 
+        Args:
+            param (Union[Sequence[Dataset], Sequence[PathLike]]): A list of datasets or paths.
+            read_pixels (bool, optional):
+                Read pixel data; usually want to do this but could be skipped in special cases.
+                Defaults to True.
+        """
         datasets: List[Dataset] = []
-        for path in param:
-            # assert isinstance(path, PathLike)
-            ds = dcmread(path, stop_before_pixels=(not read_pixels))
-            ds.from_path = Path(path)
-            datasets.append(ds)
-        self._load_dsets(datasets)
-
-    def _load_dsets(self, datasets: List[Dataset]) -> None:
-        self.verify(datasets)
+        if isinstance(param, list) and isinstance(param[0], Dataset):
+            datasets = param
+        else:
+            for path in param:
+                # assert isinstance(path, PathLike)
+                ds = dcmread(path, stop_before_pixels=(not read_pixels))
+                ds.from_path = Path(path)
+                datasets.append(ds)
+        self.__verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
 
     def make_sc(self) -> "DicomVolume":
-        """Generate a set of Secondary Capture images as a DicomVolume.
+        """Generate Dicom Secondary Capture datasets from attached annotations, returns a DicomVolume.
 
         Returns:
             DicomVolume: A DicomVolume with the resulting SC images as slices.
@@ -155,7 +159,7 @@ class DicomVolume:
             pydicom.config.INVALID_KEYWORD_BEHAVIOR = "WARN"
 
     def write_sc(self, pattern: Union[str, Path]) -> List[Path]:
-        """Write out Dicom Secondary Capture files.
+        """Write out attached annotations as Dicom Secondary Capture files.
 
         Args:
             pattern (string): Pattern for output file names, eg "./out/slice_sr.*.dcm".
@@ -167,6 +171,11 @@ class DicomVolume:
         return self.make_sc().save_as(pattern)
 
     def make_sr(self) -> List[Dataset]:
+        """Generate Dicom Structured Report datasets from attached annotations.
+
+        Returns:
+            List[Dataset]: The generated datasets.
+        """
         with tempfile.TemporaryDirectory() as dir:
             files = self.write_sr(dir + "/" + "slice.*.dcm")
             return [dcmread(f) for f in files]
@@ -188,9 +197,15 @@ class DicomVolume:
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
-        return writers.sr.generate_dicoms(self.annotation_set, pattern)
+        return writers.sr.generate(self.annotation_set, pattern)
 
     def make_visage(self) -> Dataset:
+        """Generate Visage PR dataset from attached annotations.
+
+        Returns:
+            Dataset: The generated dataset.
+        """
+
         if self.annotation_set is None:
             raise Exception("There are no annotations for this volume.")
 
@@ -211,7 +226,7 @@ class DicomVolume:
     def save_as(
         self, pattern: Union[str, PathLike], *, force: Optional[bool] = False
     ) -> List[Path]:
-        """Write out this volume to files, slice by slice.
+        """Write out this volume to files, slice by slice. Pass force=True to overwrite existing files.
 
         Args:
             pattern (str, Path): Pattern to use when writing files, eg "./out/slice_*.dcm"
@@ -279,7 +294,14 @@ class DicomVolume:
             sorted_by_z[k].z_spacing = z_spacing
         return sorted_by_z
 
-    def verify(self, datasets: List[Dataset]) -> None:
+    def __verify(self, datasets: List[Dataset]) -> None:
+        """Verifies that the given datasets appear to make up a single series.
+            Additionally sets several tags on self as attributes, eg self.Columns, self.Rows.
+
+        Args:
+            datasets (List[Dataset]): The datasets to verify.
+        """
+
         def attr_same(list: List[Any], attr: str) -> bool:
             return all(getattr(x, attr) == getattr(list[0], attr) for x in list)
 

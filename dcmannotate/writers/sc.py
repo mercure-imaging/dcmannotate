@@ -86,10 +86,6 @@ def generate(
     annotation_set: AnnotationSet,
     window: List[int] = [0, 255],
 ) -> Sequence[SCImage]:
-    # if not isinstance(volume, DicomVolume):
-    #     raise TypeError(
-    #         f"Expected 'volume' to be instance of DicomVolume, not {type(volume)}"
-    #     )
     if not isinstance(annotation_set, AnnotationSet):
         raise TypeError(
             f"Expected 'annotation_set' to be instance of AnnotationSet, not {type(annotation_set)}"

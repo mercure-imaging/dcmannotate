@@ -26,6 +26,15 @@ pydicom.datadict.add_private_dict_entries(
 
 
 def get_measurements(dataset: Union[Dataset, str, Path]) -> Optional[AnnotationsParsed]:
+    """Retrieves measurements from this SC dataset.
+
+    Args:
+        dataset (Union[Dataset, str, Path]): The dataset or a path to it
+
+    Returns:
+        Optional[AnnotationsParsed]: A representation of the parsed annotations.
+    """
+
     ds: Dataset
     if isinstance(dataset, (str, PathLike)):
         ds = pydicom.dcmread(dataset)
@@ -60,6 +69,14 @@ def read_annotations(
     volume: "DicomVolume",
     sc_files: Union["DicomVolume", Sequence[Union[Dataset, str, Path]]],
 ) -> AnnotationSet:
+    """Read annotations in and verify that they reference the volume.
+
+    Args:
+        volume (DicomVolume): The volume being annotated
+        sc_files (DicomVolume | Sequence[Dataset | str | Path]): The annotation files.
+
+    Returns: AnnotationSet
+    """
     annotations = []
     for f in sc_files:
         measurements = get_measurements(f)
@@ -67,7 +84,6 @@ def read_annotations(
             continue
         for s in volume:
             if s.SOPInstanceUID == measurements.SOPInstanceUID:
-                # measurements.reference = s
                 annotations.append(measurements.with_reference(s))
                 break
         else:

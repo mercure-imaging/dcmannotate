@@ -35,6 +35,20 @@ def log_config() -> logging.Logger:
     return log
 
 
+def maybe_glob(path_list: List[Path]) -> List[Path]:
+    """Takes a list of Paths and returns a list of Paths.
+
+    If handed a list with length one, expands it with Path.glob. Otherwise it returns it unchanged."""
+    if len(path_list) != 1:
+        return path_list
+
+    path = path_list[0]
+    if str(path)[0] == "/":  # Janky support for globbing absolute paths
+        return list(Path("/").glob(str(path.relative_to("/"))))
+    else:
+        return list(Path(".").glob(str(path)))
+
+
 def write(args: Any) -> List[Path]:
     in_files = maybe_glob(args.volume_files)
     volume = DicomVolume(in_files)
@@ -57,17 +71,6 @@ def write(args: Any) -> List[Path]:
         exit(1)
     log.info(f"Wrote {len(result_files)} files.")
     return result_files
-
-
-def maybe_glob(path_list: List[Path]) -> List[Path]:
-    if len(path_list) != 1:
-        return path_list
-
-    path = path_list[0]
-    if str(path)[0] == "/":
-        return list(Path("/").glob(str(path.relative_to("/"))))
-    else:
-        return list(Path(".").glob(str(path)))
 
 
 def read(args: Any) -> str:
