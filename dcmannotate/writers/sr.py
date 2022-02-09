@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 from subprocess import PIPE, run
 from typing import List, Optional
 
@@ -41,6 +42,11 @@ def generate_xml(aset: AnnotationSet) -> List[str]:
 def generate(
     aset: "AnnotationSet", pattern: Optional[str] = None, *, force: Optional[bool] = False
 ) -> List[Path]:
+    if not shutil.which("xml2dsr"):
+        raise Exception(
+            "DICOMSR output requires the utility 'xml2dsr' to be available in PATH. "
+            "You may need to install DCMTK (https://dicom.offis.de/dcmtk.php.en) or fix your PATH."
+        )
     for k in aset:
         for measurement in k:
             if type(measurement.value) not in (int, float) and measurement.unit:

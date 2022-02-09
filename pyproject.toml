@@ -13,13 +13,13 @@ classifiers = ["License :: OSI Approved :: GNU General Public License v3 or late
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
-        'Development Status :: 3 - Alpha'
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console'
         ]
 dynamic = ["version", "description"]
 dependencies = [
     "highdicom~=0.12.1",
     "Jinja2~=3.0.3",
-    "MarkupSafe~=2.0.1",
     "numpy~=1.19.5",
     "Pillow~=8.4.0",
     "pydicom~=2.2.2",
