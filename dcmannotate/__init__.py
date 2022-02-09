@@ -5,7 +5,6 @@ from .annotations import Annotations, AnnotationSet
 from .measurements import Ellipse, Measurement, PointMeasurement
 from .dicomvolume import DicomVolume  # usort: skip
 from .utils import Point
-from . import __main__  # usort: skip
 
 __all__ = [
     "Annotations",
@@ -16,5 +15,4 @@ __all__ = [
     "Ellipse",
     "DicomVolume",
     "VisageWriter",
-    "__main__",
 ]

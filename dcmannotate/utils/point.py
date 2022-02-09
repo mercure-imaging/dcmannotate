@@ -1,5 +1,5 @@
 import math
-from typing import Any, Generic, Union, TypeVar
+from typing import Any, Generic, TypeVar, Union
 
 PointType = TypeVar("PointType", int, float)
 

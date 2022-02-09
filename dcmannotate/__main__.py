@@ -178,16 +178,14 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def console_entry(argin: Optional[Sequence[str]] = None) -> Union[str, List[Path]]:
+def console_entry(argin: Optional[Sequence[str]] = None) -> Any:
     log_config()
     p = make_parser()
     if argin is not None:
         args = p.parse_args(argin)
     else:
         args = p.parse_args()
-    result = args.func(args)  # call the default function
-    assert isinstance(result, (str, list))
-    return result
+    return args.func(args)  # call the default function
 
 
 if __name__ == "__main__":
