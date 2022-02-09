@@ -178,7 +178,7 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def console_entry(argin: Optional[Sequence[str]] = None) -> Any:
+def parse_and_run(argin: Optional[Sequence[str]] = None) -> Any:
     log_config()
     p = make_parser()
     if argin is not None:
@@ -186,6 +186,11 @@ def console_entry(argin: Optional[Sequence[str]] = None) -> Any:
     else:
         args = p.parse_args()
     return args.func(args)  # call the default function
+
+
+def console_entry(argin: Optional[Sequence[str]] = None) -> None:
+    parse_and_run(argin)
+    return None
 
 
 if __name__ == "__main__":

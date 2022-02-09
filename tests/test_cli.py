@@ -1,6 +1,6 @@
 from typing import Any
 from dcmannotate import serialization, readers
-from dcmannotate.__main__ import read, console_entry
+from dcmannotate.__main__ import read, parse_and_run
 from collections import namedtuple
 
 from dcmannotate.dicomvolume import DicomVolume
@@ -26,7 +26,7 @@ def test_cli_read(input_volume_annotated: DicomVolume, tmpdir: Any) -> None:
             files = [files]
             volume_files = input_volume_annotated.files
 
-        result_a = console_entry(
+        result_a = parse_and_run(
             ["read", "-i", str(out_dir / "slice.*.dcm"), "-v", str(in_dir / "slice.*.dcm")]
         )
         assert isinstance(result_a, str)
@@ -55,7 +55,7 @@ def test_cli_write(input_volume_annotated: DicomVolume, tmpdir: Any) -> None:
         # result_files = write(
         #     WriteArgs(format, serialized, volume_files, str(tmpdir / "slice.*.dcm"))
         # )
-        result_files: Any = console_entry(
+        result_files: Any = parse_and_run(
             [
                 "write",
                 format,
