@@ -40,16 +40,28 @@ def maybe_glob(path_list: List[Path]) -> List[Path]:
 
     If handed a list with length one, expands it with Path.glob. Otherwise it returns it unchanged."""
     if len(path_list) != 1:
+        for p in path_list:
+            if not p.exists():
+                log.fatal(f"File '{p}' not found.")
+                exit(1)
         return path_list
 
     path = path_list[0]
     if str(path)[0] == "/":  # Janky support for globbing absolute paths
-        return list(Path("/").glob(str(path.relative_to("/"))))
+        result = list(Path("/").glob(str(path.relative_to("/"))))
     else:
-        return list(Path(".").glob(str(path)))
+        result = list(Path(".").glob(str(path)))
+    if not result:
+        log.fatal(f'Pattern "{str(path)}" did not match any files.')
+        exit(1)
+    return result
 
 
 def write(args: Any) -> List[Path]:
+    if not args.volume_files:
+        log.fatal("No input volume files provided.")
+        exit(1)
+
     in_files = maybe_glob(args.volume_files)
     volume = DicomVolume(in_files)
 
@@ -61,11 +73,13 @@ def write(args: Any) -> List[Path]:
     volume.annotate_with(annotation_set)
 
     if args.format == "sc":
-        result_files = volume.write_sc(args.destination)
+        result_files = volume.write_sc(args.destination, force=args.force)
     elif args.format == "sr":
-        result_files = volume.write_sr(args.destination)
+        result_files = volume.write_sr(args.destination, force=args.force)
     elif args.format == "visage":
-        result_files = [volume.write_visage(args.destination)]
+        result_files = [volume.write_visage(args.destination, force=args.force)]
+    elif args.format == "png":
+        result_files = volume.write_png(args.destination)
     else:
         log.error(f"Unsupported format {args.format}")
         exit(1)
@@ -130,7 +144,7 @@ def make_parser() -> argparse.ArgumentParser:
     write_parser = subparsers.add_parser("write", help="Write dicom annotations.")
     write_parser.add_argument(
         "format",
-        choices=["sr", "sc", "visage"],
+        choices=["sr", "sc", "visage", "png"],
         help="Output format: Structured Report, Secondary Capture, or Visage",
     )
     write_parser.add_argument(
@@ -153,6 +167,12 @@ def make_parser() -> argparse.ArgumentParser:
         nargs="?",
         dest="annotations",
         help="Annotations in JSON format. Omit to read from stdin.",
+    )
+    write_parser.add_argument(
+        "--force",
+        dest="force",
+        action="store_true",
+        help="Overwrite destination if files exist.",
     )
     write_parser.set_defaults(func=write)
 

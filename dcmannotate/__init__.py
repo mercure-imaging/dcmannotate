@@ -1,6 +1,6 @@
 """An experimental python library for generating simple annotations on DICOM volumes."""
 
-__version__ = "0.0.6"
+__version__ = "0.0.7"
 from .annotations import Annotations, AnnotationSet
 from .measurements import Ellipse, Measurement, PointMeasurement
 from .dicomvolume import DicomVolume  # usort: skip

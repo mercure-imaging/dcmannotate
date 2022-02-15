@@ -2,10 +2,12 @@ import tempfile
 import types
 from pathlib import Path
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, TYPE_CHECKING, Union
+from typing import Any, cast, Dict, Iterator, List, Optional, Sequence, TYPE_CHECKING, Union
 
 import numpy as np  # type: ignore
 import pydicom
+
+from PIL import Image  # type: ignore
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 
@@ -136,10 +138,14 @@ class DicomVolume:
             datasets = param
         else:
             for path in param:
+                if param.count(path) > 1:
+                    raise ValueError("A volume cannot reference the same file more than once.")
                 # assert isinstance(path, PathLike)
                 ds = dcmread(path, stop_before_pixels=(not read_pixels))
                 ds.from_path = Path(path)
                 datasets.append(ds)
+        if len(datasets) < 2:
+            raise ValueError("A volume must include at least two slices.")
         self.__verify(datasets)
         self.__datasets = self.sort_by_z(datasets)
 
@@ -171,6 +177,17 @@ class DicomVolume:
         """
 
         return self.make_sc().save_as(pattern, force=force)
+
+    def write_png(self, pattern: Union[str, Path]) -> List[Path]:
+        volume = self.make_sc()
+        files = []
+        for slice in volume:
+            im = Image.fromarray(slice.pixel_array)
+            filename = str(pattern).replace("*", f"{slice.z_index:03}")
+            im.save(filename, "png")
+
+            files.append(Path(filename))
+        return files
 
     def make_sr(self) -> List[Dataset]:
         """Generate Dicom Structured Report datasets from attached annotations.
@@ -293,12 +310,23 @@ class DicomVolume:
         # actually sort by the calculated z values
         sorted_by_z = sorted(datasets, key=lambda x: zs[x.SOPInstanceUID])
 
-        z_spacing = np.abs(
-            np.linalg.norm(
-                np.asarray(sorted_by_z[1].ImagePositionPatient)
-                - np.asarray(sorted_by_z[0].ImagePositionPatient)
+        def calc_spacing(i: int) -> float:
+            return cast(
+                float,
+                np.abs(
+                    np.linalg.norm(
+                        np.asarray(sorted_by_z[i + 1].ImagePositionPatient)
+                        - np.asarray(sorted_by_z[i].ImagePositionPatient)
+                    )
+                ),
             )
-        )
+
+        spacings = set(calc_spacing(i) for i in range(len(sorted_by_z) - 1))
+        if len(spacings) > 1:
+            raise ValueError(
+                f"Volume slices are not evenly spaced along the z-axis. The slice ImagePositionPatient z-values, relative to the first slice, appear to be {sorted(zs.values())}. Could a slice be missing?"
+            )
+        z_spacing = spacings.pop()
 
         for k in range(len(sorted_by_z)):
             sorted_by_z[k].z_index = k
@@ -312,6 +340,12 @@ class DicomVolume:
         Args:
             datasets (List[Dataset]): The datasets to verify.
         """
+
+        def attr_uniq(list: List[Any], attr: str) -> bool:
+            """
+            Returns True if all the values of the given attribute are unique.
+            """
+            return len(set([getattr(d, attr) for d in list])) == len(list)
 
         def attr_same(list: List[Any], attr: str) -> bool:
             return all(getattr(x, attr) == getattr(list[0], attr) for x in list)
@@ -330,6 +364,11 @@ class DicomVolume:
             )
         for tag in tags_equal:
             setattr(self, tag, getattr(datasets[0], tag))
+
+        if not attr_uniq(datasets, "SOPInstanceUID"):
+            raise ValueError(
+                f"Duplicate SOPInstanceUID detected on volume. Possibly caused by a slice being accidentally included twice."
+            )
 
     def __getitem__(self, key: int) -> Dataset:
         return self.__datasets[key]
