@@ -72,16 +72,20 @@ def write(args: Any) -> List[Path]:
     annotation_set = serialization.read_annotations_from_json(volume, annotations)
     volume.annotate_with(annotation_set)
 
-    if args.format == "sc":
-        result_files = volume.write_sc(args.destination, force=args.force)
-    elif args.format == "sr":
-        result_files = volume.write_sr(args.destination, force=args.force)
-    elif args.format == "visage":
-        result_files = [volume.write_visage(args.destination, force=args.force)]
-    elif args.format == "png":
-        result_files = volume.write_png(args.destination)
-    else:
-        log.error(f"Unsupported format {args.format}")
+    try:
+        if args.format == "sc":
+            result_files = volume.write_sc(args.destination, force=args.force)
+        elif args.format == "sr":
+            result_files = volume.write_sr(args.destination, force=args.force)
+        elif args.format == "visage":
+            result_files = [volume.write_visage(args.destination, force=args.force)]
+        elif args.format == "png":
+            result_files = volume.write_png(args.destination, force=args.force)
+        else:
+            log.error(f"Unsupported format {args.format}")
+            exit(1)
+    except FileExistsError as e:
+        log.error(e.args[0] + " Use --force to overwrite existing files.")
         exit(1)
     log.info(f"Wrote {len(result_files)} files.")
     return result_files

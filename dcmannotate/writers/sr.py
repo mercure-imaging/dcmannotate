@@ -64,7 +64,7 @@ def generate(
             outfile = Path(pattern.replace("*", str(annotations.reference.z_index)))
         if outfile.exists() and not force:
             raise FileExistsError(
-                f"{outfile} already exists, aborting with no files written. Pass force=True to overwrite."
+                f"{outfile} already exists and force=False, aborting with no files written."
             )
         outfiles.append(Path(outfile))
 

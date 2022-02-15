@@ -167,7 +167,7 @@ class DicomVolume:
     def write_sc(
         self, pattern: Union[str, Path], *, force: Optional[bool] = False
     ) -> List[Path]:
-        """Write out attached annotations as Dicom Secondary Capture files.
+        """Write out attached annotations as Dicom Secondary Capture files.  Pass force=True to overwrite existing files.
 
         Args:
             pattern (string): Pattern for output file names, eg "./out/slice_sr.*.dcm".
@@ -178,15 +178,23 @@ class DicomVolume:
 
         return self.make_sc().save_as(pattern, force=force)
 
-    def write_png(self, pattern: Union[str, Path]) -> List[Path]:
+    def write_png(
+        self, pattern: Union[str, Path], *, force: Optional[bool] = False
+    ) -> List[Path]:
         volume = self.make_sc()
         files = []
-        for slice in volume:
-            im = Image.fromarray(slice.pixel_array)
-            filename = str(pattern).replace("*", f"{slice.z_index:03}")
-            im.save(filename, "png")
 
-            files.append(Path(filename))
+        for slice in volume:
+            outfile = Path(str(pattern).replace("*", f"{slice.z_index:03}"))
+            if outfile.exists() and not force:
+                raise FileExistsError(
+                    f"{outfile} already exists and force=False, aborting with no files written."
+                )
+            files.append(outfile)
+
+        for filename, slice in zip(files, volume):
+            im = Image.fromarray(slice.pixel_array)
+            im.save(filename, "png")
         return files
 
     def make_sr(self) -> List[Dataset]:
@@ -202,7 +210,7 @@ class DicomVolume:
     def write_sr(
         self, pattern: Optional[str] = None, *, force: Optional[bool] = False
     ) -> List[Path]:
-        """Write out Dicom Structured Reports.
+        """Write out Dicom Structured Reports.  Pass force=True to overwrite existing files.
 
         Args:
             pattern (string, optional):
@@ -235,7 +243,7 @@ class DicomVolume:
     def write_visage(
         self, filepath: Union[str, Path], *, force: Optional[bool] = False
     ) -> Path:
-        """Write out Visage PR file.
+        """Write out Visage PR file.  Pass force=True to overwrite existing files.
 
         Args:
             filepath (string): Output file names, eg "./out/visage.dcm"
@@ -245,7 +253,7 @@ class DicomVolume:
         """
         if Path(filepath).exists() and not force:
             raise FileExistsError(
-                f"{filepath} already exists, aborting with no files written. Pass force=True to overwrite."
+                f"{filepath} already exists and force=False, aborting with no files written."
             )
 
         self.make_visage().save_as(filepath)
@@ -272,7 +280,7 @@ class DicomVolume:
             for f in files:
                 if f.exists():
                     raise FileExistsError(
-                        f"{f} already exists, aborting with no files written. Pass force=True to overwrite."
+                        f"{f} already exists and force=False, aborting with no files written."
                     )
         for sc, filename in zip(self.__datasets, files):
             sc.save_as(filename)
