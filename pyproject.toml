@@ -22,7 +22,7 @@ dependencies = [
     "Jinja2~=3.0.3",
     "numpy~=1.19",
     "Pillow>=8.4.0, <=10",
-    "pydicom~=2.2.2",
+    "pydicom>=2.2.2, <=3",
     "defusedxml~=0.7.1"
 ]
 
